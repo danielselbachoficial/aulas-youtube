@@ -1,6 +1,6 @@
 Sejam bem-vindos ao repositório com scripts das aulas do YouTube.
 
-Me chamo Daniel Selbach, sou empreendedor de TI/Telecomunicações, Mentor de Fortinet na Six Core, YouTuber.
+Me chamo Daniel Selbach, sou empreendedor, Mentor de Fortinet na Six Core, YouTuber.
 
 Neste repositório você encontrará os meus scripts criados das configurações feitas nas aulas do meu canal do YouTube.
 
