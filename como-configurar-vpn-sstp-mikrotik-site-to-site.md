@@ -2,15 +2,15 @@
 
 Esse script ele ajuda na configuração do MikroTik, configurando um link DHCP-Client, IP para rede local, servidor DHCP para rede local, perfil do túnel VPN, entre outras configurações...
 
-SSTP Server na Matriz:
+SSTP Server na Matriz:<br>
 Desmarcar a opção "pap".
 
-PPP Secret na Matriz:
+PPP Secret na Matriz:<br>
 Name: Usuário da VPN para usar no outro MikroTik.
 Password: Senha da VPN para usar no outro MikroTik.
 Profile: Default-Encryption ou criar outro perfil mais seguro.
 
-SSTP-Client na filial:
+SSTP-Client na filial:<br>
 connect-to: Inserir o IP Público da Matriz ou do servidor VPN em nuvem para fechar o túnel VPN (Necessário ser IP Público, pois é pré-requisito para VPNs).
 Port: Utilizar a mesma porta configurada na Matriz ou no servidor VPN em nuvem para fechar o túnel VPN.
 User: Usuário da VPN criado no MikroTik da Matriz ou no servidor VPN em nuvem.
