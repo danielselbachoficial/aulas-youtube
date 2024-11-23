@@ -19,7 +19,7 @@ Profile: Default-Encryption ou criar outro perfil mais seguro.<br>
 Desmarcar a opção "pap".<br>
 
 
-Obs: Foi usado IP Privado na aula, pois eram MikroTiks virtualizadas na mesma rede, mas já num ambiente real é necessário IP Público.
+*Obs: Foi usado IP Privado na aula, pois eram MikroTiks virtualizadas na mesma rede, mas já num ambiente real é necessário IP Público.*
 
 ## Script da Aula do YouTube, logo abaixo:
 
