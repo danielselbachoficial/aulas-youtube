@@ -3,20 +3,20 @@
 Esse script ele ajuda na configuração do MikroTik, configurando um link DHCP-Client, IP para rede local, servidor DHCP para rede local, perfil do túnel VPN, entre outras configurações...
 
 SSTP Server na Matriz:<br>
-Desmarcar a opção "pap".
+Desmarcar a opção "pap".<br>
 
 PPP Secret na Matriz:<br>
-Name: Usuário da VPN para usar no outro MikroTik.
-Password: Senha da VPN para usar no outro MikroTik.
-Profile: Default-Encryption ou criar outro perfil mais seguro.
+Name: Usuário da VPN para usar no outro MikroTik.<br>
+Password: Senha da VPN para usar no outro MikroTik.<br>
+Profile: Default-Encryption ou criar outro perfil mais seguro.<br>
 
 SSTP-Client na filial:<br>
-connect-to: Inserir o IP Público da Matriz ou do servidor VPN em nuvem para fechar o túnel VPN (Necessário ser IP Público, pois é pré-requisito para VPNs).
-Port: Utilizar a mesma porta configurada na Matriz ou no servidor VPN em nuvem para fechar o túnel VPN.
-User: Usuário da VPN criado no MikroTik da Matriz ou no servidor VPN em nuvem.
-Password: Senha da VPN para usar no MikroTik da Matriz ou no servidor VPN em nuvem.
-Profile: Default-Encryption ou criar outro perfil mais seguro.
-Desmarcar a opção "pap".
+connect-to: Inserir o IP Público da Matriz ou do servidor VPN em nuvem para fechar o túnel VPN (Necessário ser IP Público, pois é pré-requisito para VPNs).<br>
+Port: Utilizar a mesma porta configurada na Matriz ou no servidor VPN em nuvem para fechar o túnel VPN.<br>
+User: Usuário da VPN criado no MikroTik da Matriz ou no servidor VPN em nuvem.<br>
+Password: Senha da VPN para usar no MikroTik da Matriz ou no servidor VPN em nuvem.<br>
+Profile: Default-Encryption ou criar outro perfil mais seguro.<br>
+Desmarcar a opção "pap".<br>
 
 
 Obs: Foi usado IP Privado na aula, pois eram MikroTiks virtualizadas na mesma rede, mas já num ambiente real é necessário IP Público.
