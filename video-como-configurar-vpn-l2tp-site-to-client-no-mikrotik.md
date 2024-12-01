@@ -33,8 +33,6 @@ Configuração no Client:
 /interface ethernet set [ find default-name=ether3 ] name=ether3-CLOUD2_LINK-PPPOE-CGNAT
 /interface ethernet set [ find default-name=ether4 ] name=ether4
 /ip pool add name=pool-cgnat ranges=100.64.0.2-100.64.0.255
-/port set 0 name=serial0
-/port set 1 name=serial1
 /ppp profile set 1 local-address=100.64.0.1 remote-address=pool-cgnat
 /interface pppoe-server server add authentication=chap,mschap1,mschap2 default-profile=default-encryption disabled=no interface=*7 one-session-per-host=yes service-name=pppoe-server
 /ip address add address=199.1.0.1/22 interface=ether2-CLOUD1_LINK-DEDICADO network=199.1.0.0
