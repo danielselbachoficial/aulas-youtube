@@ -48,22 +48,42 @@ add action=masquerade chain=srcnat out-interface=ether1-LINK
 /system identity set name=PROVEDOR
 /tool romon set enabled=yes secrets=lab
   
-##### MK-2 - FILIAL #####
-[admin@MK-2] > export terse show-sensitive 
-# nov/23/2024 16:28:14 by RouterOS 7.6
+##### MK-SIXCORE - MATRIZ #####
+[admin@MK-SIXCORE] > export terse show-sensitive 
+# dec/01/2024 12:49:13 by RouterOS 7.6
 # software id = 
 #
 /interface ethernet set [ find default-name=ether1 ] name=ether1-LINK
 /interface ethernet set [ find default-name=ether4 ] name=ether4-LAN
-/ip pool add name=dhcp_pool0 ranges=192.168.20.2-192.168.20.254
-/interface sstp-client add authentication=chap,mschap1,mschap2 connect-to=<IP-PUBLICO-DA-MATRIZ> disabled=no name=sstp-matriz password=filial-sp profile=default-encryption user=filial-sp
-/interface sstp-server server set authentication=chap,mschap1,mschap2 default-profile=default-encryption enabled=yes
-/ip address add address=192.168.20.1/24 interface=ether4-LAN network=192.168.20.0
-/ip dhcp-client add interface=ether1-LINK
+/interface wireless security-profiles set [ find default=yes ] supplicant-identity=MikroTik
+/ip pool add name=dhcp_pool0 ranges=192.168.150.2-192.168.150.254
+/ip pool add name=pool-vpn ranges=172.16.0.2-172.16.0.254
 /ip dhcp-server add address-pool=dhcp_pool0 interface=ether4-LAN name=dhcp1
-/ip dhcp-server network add address=192.168.20.0/24 gateway=192.168.20.1
-/ip firewall nat add action=masquerade chain=srcnat comment=NAT out-interface=ether1-LINK
-/ip route add disabled=no dst-address=192.168.10.0/24 gateway=172.16.0.1 routing-t
-able=main suppress-hw-offload=no
-/system identity set name=MK-2
+/ppp profile set 1 comment="POOL VPN" local-address=172.16.0.1 remote-address=pool-vpn
+/interface l2tp-server server set authentication=chap,mschap1,mschap2 enabled=yes one-session-per-host=yes
+/ip address add address=199.1.0.2/30 interface=ether1-LINK network=199.1.0.0
+/ip address add address=192.168.150.1/24 interface=ether4-LAN network=192.168.150.0
+/ip dhcp-server network add address=192.168.150.0/24 gateway=192.168.150.1
+/ip dns set servers=1.1.1.1
+/ip firewall filter add action=accept chain=input comment="LIBERAR L2TP" dst-port=4500,1701,500 protocol=udp
+/ip firewall nat add action=src-nat chain=srcnat comment=NAT out-interface=*1 to-addresses=199.1.0.2
+/ip route add comment="LINK DEDICADO" disabled=no distance=1 dst-address=0.0.0.0/0 gateway=199.1.0.1 pref-src="" routing-table=main scope=30 suppress-hw-offload=no target-scope=10
+/ppp secret add name=teste password=123456 profile=default-encryption service=l2tp
+/system identity set name=MK-SIXCORE
+/tool romon set enabled=yes secrets=lab
+
+##### Roteador - Client #####
+# dec/01/2024 12:46:37 by RouterOS 7.6
+# software id = 
+#
+/ip pool add name=dhcp_pool0 ranges=10.0.0.2-10.0.0.254
+/interface pppoe-client add add-default-route=yes allow=chap,mschap1,mschap2 disabled=no interface=ether1 name=pppoe-client password=123456 profile=default-encryption user=teste
+/ip address add address=10.0.0.1/24 interface=ether4 network=10.0.0.0
+/ip dhcp-server add address-pool=dhcp_pool0 interface=ether4 name=dhcp1
+/ip dhcp-server network add address=10.0.0.0/24 dns-server=1.1.1.1 gateway=10.0.0.1
+/ip dns set servers=1.1.1.1
+/ip firewall nat add action=masquerade chain=srcnat comment=NAT out-interface=pppoe-client
+/system identity set name=Roteador-Residencial
+/tool romon set enabled=yes secrets=lab
+
 ``````
