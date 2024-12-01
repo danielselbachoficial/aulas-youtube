@@ -23,24 +23,30 @@ Configuração no Client:
 ## Script da Aula do YouTube, logo abaixo:
 
 ```sh
-##### MK-1 - MATRIZ #####
-[admin@MK-1] > export terse show-sensitive
-# nov/23/2024 16:05:54 by RouterOS 7.6
+##### MK - PROVEDOR #####
+[admin@PROVEDOR] > export terse show-sensitive
+# dec/01/2024 12:39:21 by RouterOS 7.6
 # software id =
 #
 /interface ethernet set [ find default-name=ether1 ] name=ether1-LINK
-/interface ethernet set [ find default-name=ether4 ] name=ether4-LAN
-/ip pool add name=dhcp_pool0 ranges=192.168.10.2-192.168.10.254
-/ppp profile set 1 local-address=172.16.0.1 remote-address=172.16.0.2
-/interface sstp-server server set authentication=chap,mschap1,mschap2 default-profile=default-encryption enabled=yes
-/ip address add address=192.168.10.1/24 interface=ether4-LAN network=192.168.10.0
+/interface ethernet set [ find default-name=ether2 ] name=ether2-CLOUD1_LINK-DEDICADO
+/interface ethernet set [ find default-name=ether3 ] name=ether3-CLOUD2_LINK-PPPOE-CGNAT
+/interface ethernet set [ find default-name=ether4 ] name=ether4
+/ip pool add name=pool-cgnat ranges=100.64.0.2-100.64.0.255
+/port set 0 name=serial0
+/port set 1 name=serial1
+/ppp profile set 1 local-address=100.64.0.1 remote-address=pool-cgnat
+/interface pppoe-server server add authentication=chap,mschap1,mschap2 default-profile=default-encryption disabled=no interface=*7 one-session-per-host=yes service-name=pppoe-server
+/ip address add address=199.1.0.1/22 interface=ether2-CLOUD1_LINK-DEDICADO network=199.1.0.0
 /ip dhcp-client add interface=ether1-LINK
-/ip dhcp-server add address-pool=dhcp_pool0 interface=ether4-LAN name=dhcp1
-/ip dhcp-server network add address=192.168.10.0/24 gateway=192.168.10.1
-/ip firewall nat add action=masquerade chain=srcnat comment=NAT out-interface=ether1-LINK
-/ip route add disabled=no dst-address=192.168.20.0/24 gateway=172.16.0.2 routing-table=main suppress-hw-offload=no
-/ppp secret add name=filial-sp password=filial-sp profile=default-encryption service=sstp
-/system identity set name=MK-1
+/ip dhcp-server network add address=199.1.0.0/22 gateway=199.1.0.1
+/ip firewall nat
+add action=masquerade chain=srcnat out-interface=ether1-LINK
+/ip route add blackhole disabled=no distance=1 dst-address=199.1.0.0/22 gateway="" pref-src="" routing-table=main scope=30 suppress-hw-offload=no target-scope=10
+/ppp secret add name=filial password=123 profile=default-encryption service=pppoe
+/ppp secret add name=teste password=123456 profile=default-encryption service=pppoe
+/system identity set name=PROVEDOR
+/tool romon set enabled=yes secrets=lab
   
 ##### MK-2 - FILIAL #####
 [admin@MK-2] > export terse show-sensitive 
