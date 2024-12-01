@@ -1,0 +1,63 @@
+## PASSO A PASSO PARA CONFIGURAR VPN L2TP Site-to-Client no MikroTik ##
+
+Configuração na Matriz:
+1. Configurar o Link com IP Público.
+2. Criar a rota default.
+3. Configurar o DNS.
+4. Criar a faixa de IP da rede Local e o servidor DHCP.
+5. Configurar o NAT.
+6. Liberar no Firewall as portas 1701,4500,500 (Protocolo UDP).
+7. Criar o Pool da VPN.
+8. Ativar e configurar o L2TP Server.
+9. Ajustar o perfil Default-Encryption ou clonar o perfil Default-Encryption para criar outro.
+10. Criar o Secret do Client.
+11. Testar comunicação com a internet.
+
+Configuração no Client:
+1. Configurar o roteador residencial.
+2. Verificar se o PC-WINDOWS está recebendo IP da rede local e testar comunicação com a internet.
+3. Configurar o L2TP Client no PC-WINDOWS.
+4. Criar as rotas estáticas no PC-WINDOWS.
+5. Testar a comunicação com a Matriz.
+
+## Script da Aula do YouTube, logo abaixo:
+
+```sh
+##### MK-1 - MATRIZ #####
+[admin@MK-1] > export terse show-sensitive
+# nov/23/2024 16:05:54 by RouterOS 7.6
+# software id =
+#
+/interface ethernet set [ find default-name=ether1 ] name=ether1-LINK
+/interface ethernet set [ find default-name=ether4 ] name=ether4-LAN
+/ip pool add name=dhcp_pool0 ranges=192.168.10.2-192.168.10.254
+/ppp profile set 1 local-address=172.16.0.1 remote-address=172.16.0.2
+/interface sstp-server server set authentication=chap,mschap1,mschap2 default-profile=default-encryption enabled=yes
+/ip address add address=192.168.10.1/24 interface=ether4-LAN network=192.168.10.0
+/ip dhcp-client add interface=ether1-LINK
+/ip dhcp-server add address-pool=dhcp_pool0 interface=ether4-LAN name=dhcp1
+/ip dhcp-server network add address=192.168.10.0/24 gateway=192.168.10.1
+/ip firewall nat add action=masquerade chain=srcnat comment=NAT out-interface=ether1-LINK
+/ip route add disabled=no dst-address=192.168.20.0/24 gateway=172.16.0.2 routing-table=main suppress-hw-offload=no
+/ppp secret add name=filial-sp password=filial-sp profile=default-encryption service=sstp
+/system identity set name=MK-1
+  
+##### MK-2 - FILIAL #####
+[admin@MK-2] > export terse show-sensitive 
+# nov/23/2024 16:28:14 by RouterOS 7.6
+# software id = 
+#
+/interface ethernet set [ find default-name=ether1 ] name=ether1-LINK
+/interface ethernet set [ find default-name=ether4 ] name=ether4-LAN
+/ip pool add name=dhcp_pool0 ranges=192.168.20.2-192.168.20.254
+/interface sstp-client add authentication=chap,mschap1,mschap2 connect-to=<IP-PUBLICO-DA-MATRIZ> disabled=no name=sstp-matriz password=filial-sp profile=default-encryption user=filial-sp
+/interface sstp-server server set authentication=chap,mschap1,mschap2 default-profile=default-encryption enabled=yes
+/ip address add address=192.168.20.1/24 interface=ether4-LAN network=192.168.20.0
+/ip dhcp-client add interface=ether1-LINK
+/ip dhcp-server add address-pool=dhcp_pool0 interface=ether4-LAN name=dhcp1
+/ip dhcp-server network add address=192.168.20.0/24 gateway=192.168.20.1
+/ip firewall nat add action=masquerade chain=srcnat comment=NAT out-interface=ether1-LINK
+/ip route add disabled=no dst-address=192.168.10.0/24 gateway=172.16.0.1 routing-t
+able=main suppress-hw-offload=no
+/system identity set name=MK-2
+``````
