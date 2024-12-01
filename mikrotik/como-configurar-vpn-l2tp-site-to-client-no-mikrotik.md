@@ -1,4 +1,4 @@
-## PASSO A PASSO PARA CONFIGURAR VPN L2TP Site-to-Client no MikroTik - MikroTik x Windows ##
+## PASSO A PASSO PARA CONFIGURAR VPN L2TP SITE-TO-CLIENT NO MIKROTIK - MIKROTIK X WINDOWS ##
 
 Configuração na Matriz:
 1. Configurar o Link com IP Público.
