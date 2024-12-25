@@ -41,65 +41,82 @@ cd /home/zabbix/
 
 Criar o arquivo docker-compose.yml: Crie e edite o arquivo com o seguinte conteúdo:
 ```sh
-version: "3.7"
+version: "3"
+
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: zabbix-mysql
-    restart: unless-stopped
+  zabbix-db:
+    container_name: zabbix-db
+    image: postgres:16-bullseye
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: zabbix
-      MYSQL_USER: zabbix
-      MYSQL_PASSWORD: zabbix_password
+      POSTGRES_USER: "zabbix"
+      POSTGRES_PASSWORD: "zabbix123"
+      POSTGRES_DB: "zabbix_db"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - zabbix-db-data:/var/lib/postgresql/data
+    networks:
+      - zabbix-net
+    ports:
+      - "5432:5432"
 
   zabbix-server:
-    image: zabbix/zabbix-server-mysql:alpine-7.0-latest
     container_name: zabbix-server
-    restart: unless-stopped
+    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
+    restart: always
     environment:
-      DB_SERVER_HOST: mysql
-      MYSQL_USER: zabbix
-      MYSQL_PASSWORD: zabbix_password
-      MYSQL_DATABASE: zabbix
-    depends_on:
-      - mysql
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: "zabbix"
+      POSTGRES_PASSWORD: "zabbix123"
+      POSTGRES_DB: "zabbix_db"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - zabbix-net
     ports:
       - "10051:10051"
+    depends_on:
+      - zabbix-db
 
   zabbix-web:
-    image: zabbix/zabbix-web-apache-mysql:alpine-7.0-latest
     container_name: zabbix-web
-    restart: unless-stopped
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+    restart: always
     environment:
-      DB_SERVER_HOST: mysql
-      MYSQL_USER: zabbix
-      MYSQL_PASSWORD: zabbix_password
-      MYSQL_DATABASE: zabbix
       ZBX_SERVER_HOST: zabbix-server
-    depends_on:
-      - zabbix-server
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: "zabbix"
+      POSTGRES_PASSWORD: "zabbix123"
+      POSTGRES_DB: "zabbix_db"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - zabbix-net
     ports:
       - "8080:8080"
-
-  zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.0-latest
-    container_name: zabbix-agent
-    restart: unless-stopped
-    environment:
-      ZBX_HOSTNAME: "zabbix-agent"
-      ZBX_SERVER_HOST: zabbix-server
+      - "8443:8443"
     depends_on:
       - zabbix-server
+
+  zabbix-agent:
+    container_name: zabbix-agent
+    image: zabbix/zabbix-agent:alpine-7.0-latest
+    restart: always
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+    networks:
+      - zabbix-net
     ports:
       - "10050:10050"
+      - "31999:31999"
+
+networks:
+  zabbix-net:
+    driver: bridge
 
 volumes:
-  mysql_data:
-    driver: local
-
+  zabbix-db-data:
 ```
 
 Iniciar os contêineres:
