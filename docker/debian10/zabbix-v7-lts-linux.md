@@ -4,9 +4,9 @@ Atualizar o sistema:
 ```sh
 apt get install sudo
 sudo apt update && sudo apt upgrade -y
-Adicionar o repositório do Docker:
 ```
 
+Adicionar o repositório do Docker:
 ```sh
 sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
