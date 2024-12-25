@@ -41,8 +41,7 @@ cd ~/zabbix-docker
 
 Criar o arquivo docker-compose.yml: Crie e edite o arquivo com o seguinte conteúdo:
 ```sh
-yaml
-version: '3.7'
+version: "3.7"
 services:
   mysql:
     image: mysql:8.0
@@ -100,6 +99,7 @@ services:
 volumes:
   mysql_data:
     driver: local
+
 ```
 
 Iniciar os contêineres:
