@@ -2,7 +2,7 @@
 
 Atualizar o sistema:
 ```sh
-apt get install sudo
+apt-get install sudo
 sudo apt update && sudo apt upgrade -y
 ```
 
