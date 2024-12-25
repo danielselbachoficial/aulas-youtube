@@ -1,42 +1,46 @@
 ## Parte 1: Instalar o Docker CE e Compose ##
-Atualizar o sistema:
 
-bash
+Atualizar o sistema:
+```sh
 apt get install sudo
 sudo apt update && sudo apt upgrade -y
 Adicionar o repositório do Docker:
+```
 
-bash
+```sh
 sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
 
 Instalar o Docker CE:
-
-bash
+```sh
 sudo apt update
 sudo apt install docker-ce docker-ce-cli containerd.io -y
+```
+
 Verificar a instalação:
-
-bash
+```sh
 docker --version
-Instalar o Docker Compose:
+```
 
-bash
+Instalar o Docker Compose:
+```sh
 sudo curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version
-
+```
 
 ## Parte 2: Configurar o Zabbix 7 LTS no Docker ##
 
 Criar o diretório do projeto:
-
-bash
+```sh
 mkdir ~/zabbix-docker
 cd ~/zabbix-docker
+```
 
 Criar o arquivo docker-compose.yml: Crie e edite o arquivo com o seguinte conteúdo:
+```sh
 yaml
 version: '3.7'
 services:
@@ -96,18 +100,24 @@ services:
 volumes:
   mysql_data:
     driver: local
-Iniciar os contêineres:
+```
 
-bash
+Iniciar os contêineres:
+```sh
 docker-compose up -d
+```
 
 Acessar o Zabbix Web: Abra o navegador e acesse:
 http://<IP_DO_SERVIDOR>:8080
-Use as credenciais padrão:
 
+
+Use as credenciais padrão:
+```sh
 Usuário: Admin
 Senha: zabbix
+```
 
 Verificar contêineres em execução:
-bash
+```sh
 docker ps
+```
