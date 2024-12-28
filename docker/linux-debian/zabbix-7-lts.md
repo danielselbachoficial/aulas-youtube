@@ -39,7 +39,7 @@ sudo mkdir -p /home/zabbix/
 cd /home/zabbix/
 ```
 
-Criar o arquivo docker-compose.yml: Crie e edite o arquivo com o seguinte conteúdo:
+Criar o arquivo docker-compose.yml: Crie e edite o arquivo com o seguinte conteúdo, usando o editor de texto "nano, vi, ou vim":
 ```sh
 version: "3"
 
