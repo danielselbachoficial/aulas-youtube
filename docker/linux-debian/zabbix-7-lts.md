@@ -10,6 +10,7 @@ sudo apt update && sudo apt install -y \
     software-properties-common
 ```
 
+
 Adicionar a chave GPG do Docker:
 ```sh
 sudo apt install apt-transport-https ca-certificates curl gnupg lsb-release software-properties-common -y
@@ -18,40 +19,48 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyr
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 ```
 
+
 Adicionar o repositório oficial do Docker para Ubuntu:
 ```sh
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
+
 
 Atualizar a lista de pacotes:
 ```sh
 sudo apt update
 ```
 
+
 Verifique se o repositório foi adicionado corretamente::
 ```sh
 apt-cache policy docker-ce
 ```
+
 
 Instalar o Docker CE e seus componentes:
 ```sh
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
+
 Verificar se o Docker foi instalado corretamente:
 ```sh
 docker --version
 ```
 
-Habilitar e iniciar o serviço do Docker:
-```sh
-sudo systemctl enable --now docker
-```
 
 Habilitar e iniciar o serviço do Docker:
 ```sh
 sudo systemctl enable --now docker
 ```
+
+
+Habilitar e iniciar o serviço do Docker:
+```sh
+sudo systemctl enable --now docker
+```
+
 
 Verifique se o serviço está rodando:
 ```sh
