@@ -44,6 +44,24 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 ```
 
 
+Baixe a versão mais recente do Docker Compose:
+```sh
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+```
+
+
+Dê permissões de execução:
+```sh
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+
+Verifique se a instalação foi bem-sucedida:
+```sh
+docker-compose --version
+```
+
+
 Verificar se o Docker foi instalado corretamente:
 ```sh
 docker --version
