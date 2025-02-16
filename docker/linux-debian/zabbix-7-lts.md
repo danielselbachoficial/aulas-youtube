@@ -40,7 +40,7 @@ apt-cache policy docker-ce
 
 Instalar o Docker CE e seus componentes:
 ```sh
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
 ```
 
 
