@@ -116,25 +116,31 @@ services:
       - zabbix-db
 
   zabbix-web:
-    container_name: zabbix-web
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
-    restart: always
-    environment:
-      ZBX_SERVER_HOST: zabbix-server
-      DB_SERVER_HOST: zabbix-db
-      POSTGRES_USER: "zabbix"
-      POSTGRES_PASSWORD: "zabbix123"
-      POSTGRES_DB: "zabbix_db"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-    networks:
-      - zabbix-net
-    ports:
-      - "8080:8080"
-      - "8443:8443"
-    depends_on:
-      - zabbix-server
+  container_name: zabbix-web
+  image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+  restart: always
+  environment:
+    ZBX_SERVER_HOST: zabbix-server
+    DB_SERVER_HOST: zabbix-db
+    POSTGRES_USER: "zabbix"
+    POSTGRES_PASSWORD: "zabbix123"
+    POSTGRES_DB: "zabbix_db"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /etc/timezone:/etc/timezone:ro
+  networks:
+    - zabbix-net
+  ports:
+    - "8080:8080"
+    - "8443:8443"
+  depends_on:
+    - zabbix-server
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:8080"]
+    interval: 30s
+    retries: 5
+    start_period: 10s
+    timeout: 10s
 
   zabbix-agent:
     container_name: zabbix-agent
