@@ -1,35 +1,63 @@
 ## Parte 1: Instalar o Docker CE e Compose ##
 
-Atualizar o sistema:
+Atualizar o sistema e instalar pacotes necessários:
 ```sh
-apt-get install sudo
-sudo apt update && sudo apt upgrade -y
+sudo apt update && sudo apt install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    software-properties-common
 ```
 
-Adicionar o repositório do Docker:
+Adicionar a chave GPG do Docker:
 ```sh
 sudo apt install apt-transport-https ca-certificates curl gnupg lsb-release software-properties-common -y
-curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 ```
 
-Instalar o Docker CE:
+Adicionar o repositório oficial do Docker para Ubuntu:
+```sh
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+Atualizar a lista de pacotes:
 ```sh
 sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io -y
 ```
 
-Verificar a instalação:
+Verifique se o repositório foi adicionado corretamente::
+```sh
+apt-cache policy docker-ce
+```
+
+Instalar o Docker CE e seus componentes:
+```sh
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Verificar se o Docker foi instalado corretamente:
 ```sh
 docker --version
 ```
 
-Instalar o Docker Compose:
+Habilitar e iniciar o serviço do Docker:
 ```sh
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-docker-compose --version
+sudo systemctl enable --now docker
 ```
+
+Habilitar e iniciar o serviço do Docker:
+```sh
+sudo systemctl enable --now docker
+```
+
+Verifique se o serviço está rodando:
+```sh
+sudo systemctl status docker
+```
+Se aparecer "active (running)", está funcionando corretamente.
 
 ## Parte 2: Configurar o Zabbix 7 LTS no Docker ##
 
