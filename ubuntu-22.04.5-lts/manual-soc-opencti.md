@@ -1,7 +1,7 @@
 # Manual de Instalação - SOC-OpenCTI (Modo Produção Seguro)
 
 **Sistema Operacional Base:** Ubuntu Server 22.04.5 LTS  
-**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO + NGINX + Certbot + Fail2Ban + Docker
+**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO (externo) + NGINX + Certbot + Fail2Ban + Docker Compose
 
 ---
 
@@ -19,7 +19,7 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install ufw -y
 sudo ufw allow OpenSSH
 sudo ufw allow 443/tcp
-sudo ufw allow 9001/tcp  # Acesso MinIO (opcional)
+sudo ufw allow 9001/tcp  # Acesso ao Console do MinIO
 sudo ufw enable
 ```
 
@@ -30,7 +30,11 @@ sudo ufw enable
 ```bash
 sudo apt install -y redis-server
 sudo nano /etc/redis/redis.conf
-# Adicione:
+```
+
+Adicione/edite:
+
+```conf
 requirepass SENHA_FORTE
 bind 127.0.0.1
 ```
@@ -55,14 +59,35 @@ sudo rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
 ## 5. Instalar Elasticsearch Protegido
 
 ```bash
-sudo apt install -y elasticsearch
+sudo apt install -y apt-transport-https ca-certificates curl gnupg
+curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elastic.gpg
 ```
 
-Editar `/etc/elasticsearch/elasticsearch.yml`:
+```bash
+echo "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
+sudo apt update && sudo apt install elasticsearch -y
+```
+
+Edite o arquivo:
+
+```bash
+sudo nano /etc/elasticsearch/elasticsearch.yml
+```
+
+E configure:
 
 ```yaml
 xpack.security.enabled: true
-network.host: 127.0.0.1
+xpack.security.enrollment.enabled: true
+xpack.security.http.ssl:
+  enabled: true
+  keystore.path: certs/http.p12
+xpack.security.transport.ssl:
+  enabled: true
+  verification_mode: certificate
+  keystore.path: certs/transport.p12
+  truststore.path: certs/transport.p12
+cluster.initial_master_nodes: ["soc-opencti"]
 http.host: localhost
 ```
 
@@ -71,7 +96,7 @@ sudo systemctl enable elasticsearch
 sudo systemctl start elasticsearch
 ```
 
-Se receber erro ao executar o `elasticsearch-setup-passwords`, use:
+Reset de senha (caso o setup inicial falhe):
 
 ```bash
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
@@ -79,7 +104,7 @@ sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 
 ---
 
-## 6. Instalar MinIO com Usuário Restrito
+## 6. Instalar MinIO com Usuário Restrito (Externamente)
 
 ```bash
 sudo useradd -r -s /sbin/nologin minio-user
@@ -88,11 +113,15 @@ sudo chown -R minio-user:minio-user /opt/minio
 ```
 
 ```bash
-sudo wget https://dl.min.io/server/minio/release/linux-amd64/minio
-sudo chmod +x minio && sudo mv minio /usr/local/bin/
+wget https://dl.min.io/server/minio/release/linux-amd64/minio
+chmod +x minio && sudo mv minio /usr/local/bin/
 ```
 
-Criar o serviço `/etc/systemd/system/minio.service`:
+Criar serviço:
+
+```bash
+sudo nano /etc/systemd/system/minio.service
+```
 
 ```ini
 [Unit]
@@ -119,31 +148,18 @@ sudo systemctl start minio
 
 ---
 
-## 7. Instalar Docker e Docker Compose
+## 7. Instalar OpenCTI (via Docker Compose, sem MinIO interno)
 
 ```bash
 sudo apt install -y docker.io docker-compose git
-```
-
-Adicione seu usuário ao grupo Docker para evitar erros de permissão:
-
-```bash
-sudo usermod -aG docker $USER
-```
-
-⚠️ **Importante:** Deslogue e logue novamente (ou reinicie) para aplicar.
-
----
-
-## 8. Instalar OpenCTI (via Docker Compose)
-
-```bash
 cd /home/usuário
 sudo git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
-sudo cp .env.sample .env
-sudo nano .env  # Configure senhas e conexões para Redis, RabbitMQ, Elastic, MinIO etc.
+cp .env.sample .env
+nano .env  # Configure conexões para Redis, RabbitMQ, Elasticsearch, MinIO externo etc.
 ```
+
+Edite o `docker-compose.yml` e **remova a seção** `minio:` completamente. Depois:
 
 ```bash
 sudo docker-compose up -d
@@ -151,13 +167,17 @@ sudo docker-compose up -d
 
 ---
 
-## 9. Configurar HTTPS com NGINX + Let's Encrypt
+## 8. Configurar HTTPS com NGINX + Let's Encrypt
 
 ```bash
 sudo apt install -y nginx certbot python3-certbot-nginx
 ```
 
-Crie `/etc/nginx/sites-available/opencti.conf`:
+Crie o arquivo:
+
+```bash
+sudo nano /etc/nginx/sites-available/opencti.conf
+```
 
 ```nginx
 server {
@@ -183,7 +203,7 @@ sudo certbot --nginx -d opencti.seudominio.com.br
 
 ---
 
-## 10. Ativar Proteção Contra Força Bruta (Fail2Ban)
+## 9. Ativar Proteção Contra Força Bruta (Fail2Ban)
 
 ```bash
 sudo apt install -y fail2ban
@@ -208,7 +228,7 @@ sudo systemctl restart fail2ban
 
 ---
 
-## 11. Checklist Final de Segurança
+## 10. Checklist Final de Segurança
 
 | Recurso                          | Status |
 | -------------------------------- | ------ |
@@ -219,7 +239,7 @@ sudo systemctl restart fail2ban
 | 🚧 Elasticsearch com senha       | ✅      |
 | 📡 HTTPS com Certbot + NGINX     | ✅      |
 | 📦 Docker OpenCTI rodando        | ✅      |
-| 🧠 MinIO isolado e seguro        | ✅      |
+| 🧠 MinIO externo isolado         | ✅      |
 | ⚠️ Fail2Ban ativo e funcional     | ✅      |
 
 ---
@@ -232,4 +252,6 @@ docker-compose logs -f
 
 ---
 
-Pronto! O OpenCTI está instalado de forma **segura** e pronta para **ambientes de produção**.
+OpenCTI implantado com segurança total e pronto para ambientes de produção críticos.
+
+---
