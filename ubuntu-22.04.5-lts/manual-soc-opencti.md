@@ -1,6 +1,7 @@
 # Manual de Instalação - SOC-OpenCTI (Modo Produção Seguro)
 
 > **Base:** Ubuntu Server 22.04.5 LTS
+> 
 > **Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO
 
 ---
