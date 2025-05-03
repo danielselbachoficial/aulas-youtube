@@ -1,7 +1,7 @@
 # Manual de Instalação - SOC-OpenCTI (Modo Produção Seguro)
 
 **Sistema Operacional Base:** Ubuntu Server 22.04.5 LTS  
-**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO + NGINX + Certbot + Fail2Ban
+**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO + NGINX + Certbot + Fail2Ban + Docker
 
 ---
 
@@ -71,13 +71,11 @@ sudo systemctl enable elasticsearch
 sudo systemctl start elasticsearch
 ```
 
-Resetar a senha do usuário `elastic` (caso tenha sido pré-configurada automaticamente):
+Se receber erro ao executar o `elasticsearch-setup-passwords`, use:
 
 ```bash
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
-
-> Use senha forte e guarde para configurar o OpenCTI.
 
 ---
 
@@ -121,24 +119,39 @@ sudo systemctl start minio
 
 ---
 
-## 7. Instalar OpenCTI (via Docker Compose)
+## 7. Instalar Docker e Docker Compose
 
 ```bash
 sudo apt install -y docker.io docker-compose git
+```
+
+Adicione seu usuário ao grupo Docker para evitar erros de permissão:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+⚠️ **Importante:** Deslogue e logue novamente (ou reinicie) para aplicar.
+
+---
+
+## 8. Instalar OpenCTI (via Docker Compose)
+
+```bash
 cd /home/usuário
-git clone https://github.com/OpenCTI-Platform/docker.git opencti
+sudo git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
-cp .env.sample .env
-nano .env  # Configure senhas e conexões para Redis, RabbitMQ, Elastic, MinIO etc.
+sudo cp .env.sample .env
+sudo nano .env  # Configure senhas e conexões para Redis, RabbitMQ, Elastic, MinIO etc.
 ```
 
 ```bash
-docker-compose up -d
+sudo docker-compose up -d
 ```
 
 ---
 
-## 8. Configurar HTTPS com NGINX + Let's Encrypt
+## 9. Configurar HTTPS com NGINX + Let's Encrypt
 
 ```bash
 sudo apt install -y nginx certbot python3-certbot-nginx
@@ -170,7 +183,7 @@ sudo certbot --nginx -d opencti.seudominio.com.br
 
 ---
 
-## 9. Ativar Proteção Contra Força Bruta (Fail2Ban)
+## 10. Ativar Proteção Contra Força Bruta (Fail2Ban)
 
 ```bash
 sudo apt install -y fail2ban
@@ -195,7 +208,7 @@ sudo systemctl restart fail2ban
 
 ---
 
-## 10. Checklist Final de Segurança
+## 11. Checklist Final de Segurança
 
 | Recurso                          | Status |
 | -------------------------------- | ------ |
