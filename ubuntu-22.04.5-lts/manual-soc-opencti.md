@@ -8,7 +8,7 @@
 ## 1. Atualizar o Sistema
 
 ```bash
-sudo apt update && apt upgrade -y
+sudo apt update && sudo apt upgrade -y
 ```
 
 ---
@@ -19,7 +19,7 @@ sudo apt update && apt upgrade -y
 sudo apt install ufw -y
 sudo ufw allow OpenSSH
 sudo ufw allow 443/tcp
-sudo ufw allow 9001/tcp  # Acesso MinIO se usar console HTTPS
+sudo ufw allow 9001/tcp  # MinIO console (opcional)
 sudo ufw enable
 ```
 
@@ -33,9 +33,6 @@ sudo nano /etc/redis/redis.conf
 # Adicione:
 requirepass SENHA_FORTE
 bind 127.0.0.1
-```
-
-```bash
 sudo systemctl restart redis-server
 ```
 
@@ -45,20 +42,20 @@ sudo systemctl restart redis-server
 
 ```bash
 sudo apt install -y rabbitmq-server
-sudo rabbitmqctl add_user opencti_rabbit SENHA_FORTE
+sudo rabbitmqctl add_user opencti SENHA_FORTE
 sudo rabbitmqctl add_vhost opencti
-sudo rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
+sudo rabbitmqctl set_permissions -p opencti opencti ".*" ".*" ".*"
 ```
 
 ---
 
-## 5. Instalar Elasticsearch Protegido
+## 5. Instalar Elasticsearch com Segurança Ativada
 
 ```bash
-sudo apt install apt-transport-https ca-certificates curl gnupg -y
-curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/elastic.gpg
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elastic-keyring.gpg
 
-echo "deb [signed-by=/etc/apt/trusted.gpg.d/elastic.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
+echo "deb [signed-by=/usr/share/keyrings/elastic-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | \
+  sudo tee /etc/apt/sources.list.d/elastic-8.x.list
 
 sudo apt update && sudo apt install elasticsearch -y
 ```
@@ -76,14 +73,15 @@ sudo systemctl enable elasticsearch
 sudo systemctl start elasticsearch
 ```
 
-**Resetar senha do usuário `elastic` (se necessário):**
+Para resetar a senha do usuário `elastic`:
+
 ```bash
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
 
 ---
 
-## 6. Instalar MinIO com systemd (modo externo seguro)
+## 6. Instalar MinIO (modo externo com systemd)
 
 ```bash
 sudo useradd -r -s /sbin/nologin minio-user
@@ -92,8 +90,8 @@ sudo chown -R minio-user:minio-user /opt/minio
 ```
 
 ```bash
-sudo wget https://dl.min.io/server/minio/release/linux-amd64/minio
-sudo chmod +x minio && sudo mv minio /usr/local/bin/
+wget https://dl.min.io/server/minio/release/linux-amd64/minio
+chmod +x minio && sudo mv minio /usr/local/bin/
 ```
 
 Crie `/etc/systemd/system/minio.service`:
@@ -108,7 +106,7 @@ User=minio-user
 Group=minio-user
 ExecStart=/usr/local/bin/minio server /opt/minio/data --console-address ":9001"
 Environment="MINIO_ROOT_USER=opencti"
-Environment="MINIO_ROOT_PASSWORD=SENHA_FORTE"
+Environment="MINIO_ROOT_PASSWORD=SenhaForteAqui"
 Restart=always
 
 [Install]
@@ -123,7 +121,7 @@ sudo systemctl start minio
 
 ---
 
-## 7. Instalar OpenCTI (via Docker Compose)
+## 7. Instalar OpenCTI via Docker Compose
 
 ```bash
 sudo apt install -y docker.io docker-compose git
@@ -131,10 +129,9 @@ cd /home/usuário
 sudo git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
 sudo cp .env.sample .env
-sudo nano .env
 ```
 
-### Exemplo de `.env` seguro para produção:
+Atualize `.env` com as variáveis reais:
 
 ```env
 OPENCTI_ADMIN_EMAIL=admin@opencti.io
@@ -163,7 +160,17 @@ ELASTIC_MEMORY_SIZE=4G
 SMTP_HOSTNAME=localhost
 ```
 
+Suba os containers:
+
 ```bash
+sudo docker-compose up -d
+```
+
+> Se ocorrer erro de volume ou container corrompido, execute:
+>
+```bash
+sudo docker-compose down --volumes --remove-orphans
+sudo docker system prune --all --volumes -f
 sudo docker-compose up -d
 ```
 
@@ -201,7 +208,7 @@ sudo certbot --nginx -d opencti.seudominio.com.br
 
 ---
 
-## 9. Ativar Proteção Contra Força Bruta (Fail2Ban)
+## 9. Ativar Fail2Ban (proteção SSH)
 
 ```bash
 sudo apt install -y fail2ban
@@ -237,17 +244,23 @@ sudo systemctl restart fail2ban
 | 🚧 Elasticsearch com senha       | ✅      |
 | 📡 HTTPS com Certbot + NGINX     | ✅      |
 | 📦 Docker OpenCTI rodando        | ✅      |
-| 🧠 MinIO isolado e seguro        | ✅      |
+| 🧠 MinIO externo via systemd     | ✅      |
 | ⚠️ Fail2Ban ativo e funcional     | ✅      |
 
 ---
 
-> **Dica:** Acompanhe os logs com:
+> **Logs do sistema:**
 
 ```bash
-docker-compose logs -f
+sudo docker-compose logs -f
+```
+
+> **Logs do NGINX:**
+
+```bash
+sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log
 ```
 
 ---
 
-Pronto! O OpenCTI está instalado de forma **segura** e pronto para ambientes de produção.
+OpenCTI instalado com segurança em ambiente de produção 🚀
