@@ -19,7 +19,7 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install ufw -y
 sudo ufw allow OpenSSH
 sudo ufw allow 443/tcp
-# sudo ufw allow 9001/tcp  # Apenas se for usar a interface web do MinIO
+sudo ufw allow 9001/tcp  # Acesso MinIO (opcional)
 sudo ufw enable
 ```
 
@@ -54,11 +54,28 @@ sudo rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
 
 ## 5. Instalar Elasticsearch Protegido
 
+### 5.1 Adicionar chave GPG da Elastic
+
 ```bash
-sudo apt install -y elasticsearch
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg
 ```
 
-Editar `/etc/elasticsearch/elasticsearch.yml`:
+### 5.2 Adicionar repositório Elastic
+
+```bash
+echo "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
+```
+
+### 5.3 Atualizar pacotes e instalar Elasticsearch
+
+```bash
+sudo apt update
+sudo apt install elasticsearch -y
+```
+
+### 5.4 Ativar configurações de segurança
+
+Edite `/etc/elasticsearch/elasticsearch.yml`:
 
 ```yaml
 xpack.security.enabled: true
@@ -69,6 +86,11 @@ http.host: localhost
 ```bash
 sudo systemctl enable elasticsearch
 sudo systemctl start elasticsearch
+```
+
+### 5.5 Criar senhas para usuários internos
+
+```bash
 sudo /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
 ```
 
@@ -99,7 +121,7 @@ After=network.target
 [Service]
 User=minio-user
 Group=minio-user
-ExecStart=/usr/local/bin/minio server /opt/minio/data
+ExecStart=/usr/local/bin/minio server /opt/minio/data --console-address ":9001"
 Environment="MINIO_ROOT_USER=opencti"
 Environment="MINIO_ROOT_PASSWORD=SENHA_FORTE"
 Restart=always
@@ -120,22 +142,16 @@ sudo systemctl start minio
 
 ```bash
 sudo apt install -y docker.io docker-compose git
-sudo groupadd docker
-sudo usermod -aG docker $USER
-newgrp docker
-
-cd /home/$USER
-git clone https://github.com/OpenCTI-Platform/docker.git opencti
+cd /home/usuário
+sudo git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
 cp .env.sample .env
 nano .env  # Configure senhas e conexões para Redis, RabbitMQ, Elastic, MinIO etc.
 ```
 
 ```bash
-docker-compose up -d
+sudo docker-compose up -d
 ```
-
-> **💡 Dica:** Use volumes no docker-compose.yml para garantir persistência dos dados.
 
 ---
 
@@ -220,4 +236,4 @@ docker-compose logs -f
 
 ---
 
-✅ OpenCTI pronto para produção de forma **segura** e **estruturada**.
+Pronto! O OpenCTI está instalado de forma **segura** e pronta para **ambientes de produção**.
