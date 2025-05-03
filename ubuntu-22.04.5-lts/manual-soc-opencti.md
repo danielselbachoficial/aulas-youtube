@@ -54,28 +54,11 @@ sudo rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
 
 ## 5. Instalar Elasticsearch Protegido
 
-### 5.1 Adicionar chave GPG da Elastic
-
 ```bash
-wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg
+sudo apt install -y elasticsearch
 ```
 
-### 5.2 Adicionar repositório Elastic
-
-```bash
-echo "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
-```
-
-### 5.3 Atualizar pacotes e instalar Elasticsearch
-
-```bash
-sudo apt update
-sudo apt install elasticsearch -y
-```
-
-### 5.4 Ativar configurações de segurança
-
-Edite `/etc/elasticsearch/elasticsearch.yml`:
+Editar `/etc/elasticsearch/elasticsearch.yml`:
 
 ```yaml
 xpack.security.enabled: true
@@ -88,13 +71,13 @@ sudo systemctl enable elasticsearch
 sudo systemctl start elasticsearch
 ```
 
-### 5.5 Criar senhas para usuários internos
+Resetar a senha do usuário `elastic` (caso tenha sido pré-configurada automaticamente):
 
 ```bash
-sudo /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
+sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
 
-> Use senha forte para o usuário `elastic`
+> Use senha forte e guarde para configurar o OpenCTI.
 
 ---
 
@@ -143,14 +126,14 @@ sudo systemctl start minio
 ```bash
 sudo apt install -y docker.io docker-compose git
 cd /home/usuário
-sudo git clone https://github.com/OpenCTI-Platform/docker.git opencti
+git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
 cp .env.sample .env
 nano .env  # Configure senhas e conexões para Redis, RabbitMQ, Elastic, MinIO etc.
 ```
 
 ```bash
-sudo docker-compose up -d
+docker-compose up -d
 ```
 
 ---
