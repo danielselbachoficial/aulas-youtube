@@ -3,6 +3,7 @@
 > Ambiente: Coletor de Logs
 >
 > Ferramentas: **Filebeat + Logstash**
+> 
 > Sistema Operacional Base: **Debian 12 Minimalista**
 
 ---
