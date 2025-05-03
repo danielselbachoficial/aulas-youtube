@@ -1,8 +1,7 @@
 # Manual de Instalação - SOC-OpenCTI (Modo Produção Seguro)
 
-**Sistema Operacional Base:** Ubuntu Server 22.04.5 LTS
-
-**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO + NGINX + Certbot
+**Sistema Operacional Base:** Ubuntu Server 22.04.5 LTS  
+**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO + NGINX + Certbot + Fail2Ban
 
 ---
 
@@ -166,7 +165,32 @@ certbot --nginx -d opencti.seudominio.com.br
 
 ---
 
-## 9. Checklist Final de Segurança
+## 9. Ativar Proteção Contra Força Bruta (Fail2Ban)
+
+```bash
+apt install -y fail2ban
+systemctl enable fail2ban
+systemctl start fail2ban
+```
+
+Crie ou edite `/etc/fail2ban/jail.local`:
+
+```ini
+[sshd]
+enabled = true
+port = ssh
+logpath = /var/log/auth.log
+maxretry = 5
+bantime = 1h
+```
+
+```bash
+systemctl restart fail2ban
+```
+
+---
+
+## 10. Checklist Final de Segurança
 
 | Recurso                          | Status |
 | -------------------------------- | ------ |
@@ -178,6 +202,7 @@ certbot --nginx -d opencti.seudominio.com.br
 | 📡 HTTPS com Certbot + NGINX     | ✅      |
 | 📦 Docker OpenCTI rodando        | ✅      |
 | 🧠 MinIO isolado e seguro        | ✅      |
+| ⚠️ Fail2Ban ativo e funcional     | ✅      |
 
 ---
 
@@ -189,4 +214,4 @@ docker-compose logs -f
 
 ---
 
-Pronto! O OpenCTI está instalado de forma segura e pronta para produção.
+Pronto! O OpenCTI está instalado de forma **segura** e pronta para **ambientes de produção**.
