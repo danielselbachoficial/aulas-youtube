@@ -19,7 +19,7 @@ sudo apt update && apt upgrade -y
 sudo apt install ufw -y
 sudo ufw allow OpenSSH
 sudo ufw allow 443/tcp
-sudo ufw allow 9001/tcp  # Console MinIO
+sudo ufw allow 9001/tcp  # Acesso MinIO se usar console HTTPS
 sudo ufw enable
 ```
 
@@ -55,10 +55,15 @@ sudo rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
 ## 5. Instalar Elasticsearch Protegido
 
 ```bash
-sudo apt install -y elasticsearch
+sudo apt install apt-transport-https ca-certificates curl gnupg -y
+curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/elastic.gpg
+
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/elastic.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
+
+sudo apt update && sudo apt install elasticsearch -y
 ```
 
-Editar `/etc/elasticsearch/elasticsearch.yml`:
+Edite `/etc/elasticsearch/elasticsearch.yml`:
 
 ```yaml
 xpack.security.enabled: true
@@ -69,12 +74,16 @@ http.host: localhost
 ```bash
 sudo systemctl enable elasticsearch
 sudo systemctl start elasticsearch
+```
+
+**Resetar senha do usuário `elastic` (se necessário):**
+```bash
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
 
 ---
 
-## 6. Instalar MinIO com Usuário Restrito (externo via systemd)
+## 6. Instalar MinIO com systemd (modo externo seguro)
 
 ```bash
 sudo useradd -r -s /sbin/nologin minio-user
@@ -87,7 +96,7 @@ sudo wget https://dl.min.io/server/minio/release/linux-amd64/minio
 sudo chmod +x minio && sudo mv minio /usr/local/bin/
 ```
 
-Criar o serviço `/etc/systemd/system/minio.service`:
+Crie `/etc/systemd/system/minio.service`:
 
 ```ini
 [Unit]
@@ -121,17 +130,37 @@ sudo apt install -y docker.io docker-compose git
 cd /home/usuário
 sudo git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
-cp .env.sample .env
-nano .env
+sudo cp .env.sample .env
+sudo nano .env
 ```
 
-Configure as seguintes variáveis no `.env`:
+### Exemplo de `.env` seguro para produção:
 
 ```env
-MINIO_ENDPOINT=http://host.docker.internal:9000
+OPENCTI_ADMIN_EMAIL=admin@opencti.io
+OPENCTI_ADMIN_PASSWORD=SenhaForteAqui
+OPENCTI_ADMIN_TOKEN=uuid-aqui
+OPENCTI_BASE_URL=https://opencti.seudominio.com.br
+OPENCTI_HEALTHCHECK_ACCESS_KEY=token-monitoramento
+
+# MinIO externo
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
 MINIO_BUCKET=opencti
-MINIO_ACCESS_KEY=opencti
-MINIO_SECRET_KEY=SENHA_FORTE
+MINIO_REGION=us-east-1
+MINIO_SSL=false
+MINIO_ROOT_USER=opencti
+MINIO_ROOT_PASSWORD=SenhaForteAqui
+
+# RabbitMQ
+RABBITMQ_DEFAULT_USER=opencti
+RABBITMQ_DEFAULT_PASS=SenhaForteAqui
+
+# Elasticsearch
+ELASTIC_MEMORY_SIZE=4G
+
+# SMTP
+SMTP_HOSTNAME=localhost
 ```
 
 ```bash
@@ -180,7 +209,7 @@ sudo systemctl enable fail2ban
 sudo systemctl start fail2ban
 ```
 
-Crie ou edite `/etc/fail2ban/jail.local`:
+Crie `/etc/fail2ban/jail.local`:
 
 ```ini
 [sshd]
@@ -208,7 +237,7 @@ sudo systemctl restart fail2ban
 | 🚧 Elasticsearch com senha       | ✅      |
 | 📡 HTTPS com Certbot + NGINX     | ✅      |
 | 📦 Docker OpenCTI rodando        | ✅      |
-| 🧠 MinIO externo via systemd     | ✅      |
+| 🧠 MinIO isolado e seguro        | ✅      |
 | ⚠️ Fail2Ban ativo e funcional     | ✅      |
 
 ---
@@ -216,9 +245,9 @@ sudo systemctl restart fail2ban
 > **Dica:** Acompanhe os logs com:
 
 ```bash
-sudo docker-compose logs -f
+docker-compose logs -f
 ```
 
 ---
 
-Pronto! O OpenCTI está instalado de forma **segura** e pronta para **ambientes de produção** com MinIO externo e controle systemd.
+Pronto! O OpenCTI está instalado de forma **segura** e pronto para ambientes de produção.
