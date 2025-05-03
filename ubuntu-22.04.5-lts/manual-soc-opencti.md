@@ -190,7 +190,3 @@ docker-compose logs -f
 ---
 
 Pronto! O OpenCTI está instalado de forma segura e pronta para produção.
-
----
-
-✉ Qualquer dúvida ou ajuste, envie um pull request ou abra um issue neste repositório!
