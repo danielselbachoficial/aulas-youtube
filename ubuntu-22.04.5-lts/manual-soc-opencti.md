@@ -1,7 +1,7 @@
 # Manual de Instalação - SOC-OpenCTI (Modo Produção Seguro)
 
-**Sistema Operacional Base:** Ubuntu Server 22.04.5 LTS  
-**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO (externo via systemd) + NGINX + Certbot ou SSL Interno + Fail2Ban
+**Sistema Operacional Base:** Ubuntu Server 22.04.5 LTS
+**Ferramentas:** OpenCTI + Redis + RabbitMQ + Elasticsearch + MinIO (externo via systemd) + NGINX + Certbot (ou OpenSSL autoassinado) + Fail2Ban + Docker Compose
 
 ---
 
@@ -19,7 +19,7 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install ufw -y
 sudo ufw allow OpenSSH
 sudo ufw allow 443/tcp
-sudo ufw allow 9001/tcp  # Acesso MinIO (opcional)
+sudo ufw allow 9000/tcp  # MinIO (opcional)
 sudo ufw enable
 ```
 
@@ -30,13 +30,9 @@ sudo ufw enable
 ```bash
 sudo apt install -y redis-server
 sudo nano /etc/redis/redis.conf
-```
-Adicione:
-```ini
+# Adicione ou edite:
 requirepass SENHA_FORTE
 bind 127.0.0.1
-```
-```bash
 sudo systemctl restart redis-server
 ```
 
@@ -58,34 +54,42 @@ sudo rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
 ```bash
 sudo apt install -y elasticsearch
 ```
-Editar `/etc/elasticsearch/elasticsearch.yml`:
+
+Edite `/etc/elasticsearch/elasticsearch.yml`:
+
 ```yaml
 xpack.security.enabled: true
+xpack.security.enrollment.enabled: true
 network.host: 127.0.0.1
 http.host: localhost
 ```
+
 ```bash
 sudo systemctl enable elasticsearch
 sudo systemctl start elasticsearch
 ```
 
-### Resetar senha padrão do usuário `elastic`:
+**Para resetar a senha do `elastic`** (caso necessário):
+
 ```bash
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
 
 ---
 
-## 6. Instalar MinIO com systemd e Usuário Restrito
+## 6. Instalar MinIO com Systemd (externo ao Docker)
 
 ```bash
 sudo useradd -r -s /sbin/nologin minio-user
 sudo mkdir -p /opt/minio/data
 sudo chown -R minio-user:minio-user /opt/minio
-sudo wget https://dl.min.io/server/minio/release/linux-amd64/minio -O /usr/local/bin/minio
-sudo chmod +x /usr/local/bin/minio
+
+wget https://dl.min.io/server/minio/release/linux-amd64/minio
+chmod +x minio && sudo mv minio /usr/local/bin/
 ```
-Crie o serviço `/etc/systemd/system/minio.service`:
+
+Crie o arquivo `/etc/systemd/system/minio.service`:
+
 ```ini
 [Unit]
 Description=MinIO
@@ -96,12 +100,13 @@ User=minio-user
 Group=minio-user
 ExecStart=/usr/local/bin/minio server /opt/minio/data --console-address ":9001"
 Environment="MINIO_ROOT_USER=opencti"
-Environment="MINIO_ROOT_PASSWORD=SENHA_FORTE"
+Environment="MINIO_ROOT_PASSWORD=SenhaForteAqui"
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
+
 ```bash
 sudo systemctl daemon-reexec
 sudo systemctl enable minio
@@ -110,18 +115,24 @@ sudo systemctl start minio
 
 ---
 
-## 7. Instalar OpenCTI (via Docker Compose)
+## 7. Instalar Docker + Docker Compose
 
 ```bash
 sudo apt install -y docker.io docker-compose git
+```
+
+Clone o repositório oficial:
+
+```bash
 cd /home/usuario
 sudo git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
-sudo cp .env.sample .env
-sudo nano .env
+cp .env.sample .env
 ```
-Exemplo de `.env` seguro:
-```ini
+
+Edite o `.env` com os dados atualizados (exemplo):
+
+```env
 OPENCTI_ADMIN_EMAIL=admin@opencti.io
 OPENCTI_ADMIN_PASSWORD=SenhaForteAqui
 OPENCTI_ADMIN_TOKEN=uuid-aqui
@@ -147,32 +158,34 @@ ELASTIC_MEMORY_SIZE=4G
 # SMTP
 SMTP_HOSTNAME=localhost
 ```
+
+Comente ou remova o serviço `minio` do `docker-compose.yml`, pois está rodando externamente.
+
+Suba os containers:
+
 ```bash
 sudo docker-compose up -d
 ```
 
 ---
 
-## 8. Configurar HTTPS
+## 8. HTTPS com NGINX
 
-### A) 🔐 Certificado Autoassinado (Ambientes com IP interno)
+### Para domínio público com Let's Encrypt:
 
 ```bash
-sudo mkdir -p /etc/ssl/certs /etc/ssl/private
-sudo openssl req -x509 -newkey rsa:4096 -nodes \
--keyout /etc/ssl/private/opencti.key \
--out /etc/ssl/certs/opencti.crt \
--days 365 \
--subj "/C=BR/ST=SC/L=Cidade/O=Exemplo/CN=opencti.local"
+sudo apt install -y nginx certbot python3-certbot-nginx
 ```
-Crie o arquivo `/etc/nginx/sites-available/opencti.conf`:
+
+Crie `/etc/nginx/sites-available/opencti.conf`:
+
 ```nginx
 server {
     listen 443 ssl;
-    server_name opencti.local;
+    server_name opencti.seudominio.com.br;
 
-    ssl_certificate /etc/ssl/certs/opencti.crt;
-    ssl_certificate_key /etc/ssl/private/opencti.key;
+    ssl_certificate /etc/letsencrypt/live/opencti.seudominio.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/opencti.seudominio.com.br/privkey.pem;
 
     location / {
         proxy_pass http://localhost:8080;
@@ -181,28 +194,59 @@ server {
     }
 }
 ```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/opencti.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl restart nginx
+sudo certbot --nginx -d opencti.seudominio.com.br
+```
+
+### Para IP interno (SSL autoassinado):
+
+```bash
+sudo mkdir -p /etc/nginx/certs
+sudo openssl req -x509 -newkey rsa:4096 -nodes \
+  -keyout /etc/nginx/certs/opencti.key \
+  -out /etc/nginx/certs/opencti.crt \
+  -days 365 \
+  -subj "/C=BR/ST=SC/L=Cidade/O=Empresa/CN=opencti.local"
+```
+
+Configuração do NGINX:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name opencti.local;
+
+    ssl_certificate /etc/nginx/certs/opencti.crt;
+    ssl_certificate_key /etc/nginx/certs/opencti.key;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/opencti.conf /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl restart nginx
 ```
 
-### B) 🔒 Let's Encrypt (caso tenha domínio público)
-
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d opencti.seudominio.com.br
-```
-
 ---
 
-## 9. Ativar Proteção Contra Força Bruta (Fail2Ban)
+## 9. Fail2Ban - Proteção contra Força Bruta no SSH
 
 ```bash
 sudo apt install -y fail2ban
 sudo systemctl enable fail2ban
 sudo systemctl start fail2ban
 ```
+
 Crie `/etc/fail2ban/jail.local`:
+
 ```ini
 [sshd]
 enabled = true
@@ -211,6 +255,7 @@ logpath = /var/log/auth.log
 maxretry = 5
 bantime = 1h
 ```
+
 ```bash
 sudo systemctl restart fail2ban
 ```
@@ -226,19 +271,17 @@ sudo systemctl restart fail2ban
 | 🚧 Redis protegido               | ✅      |
 | 🚧 RabbitMQ protegido            | ✅      |
 | 🚧 Elasticsearch com senha       | ✅      |
-| 📡 HTTPS (Let's Encrypt ou Auto) | ✅      |
+| 📡 HTTPS (Let’s Encrypt ou SSL)  | ✅      |
 | 📦 Docker OpenCTI rodando        | ✅      |
-| 🧠 MinIO externo e seguro        | ✅      |
-| ⚠️ Fail2Ban ativo e funcional     | ✅      |
+| 🧠 MinIO externo via systemd     | ✅      |
+| ⚠️ Fail2Ban ativo e funcional    | ✅      |
 
 ---
 
-> **Dica:** Acompanhe os logs com:
+> **Dica:** Acompanhe os logs do OpenCTI com:
 
 ```bash
 sudo docker-compose logs -f
 ```
 
----
-
-OpenCTI pronto para produção com segurança reforçada em ambiente interno ou externo.
+Pronto! Ambiente seguro e em produção com o OpenCTI totalmente protegido. ✅
