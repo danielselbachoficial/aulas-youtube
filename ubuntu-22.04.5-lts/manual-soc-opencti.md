@@ -8,7 +8,7 @@
 ## 1. Atualizar o Sistema
 
 ```bash
-apt update && apt upgrade -y
+sudo apt update && sudo apt upgrade -y
 ```
 
 ---
@@ -16,11 +16,11 @@ apt update && apt upgrade -y
 ## 2. Habilitar o Firewall (UFW)
 
 ```bash
-apt install ufw -y
-ufw allow OpenSSH
-ufw allow 443/tcp
-ufw allow 9001/tcp  # Acesso MinIO (opcional)
-ufw enable
+sudo apt install ufw -y
+sudo ufw allow OpenSSH
+sudo ufw allow 443/tcp
+# sudo ufw allow 9001/tcp  # Apenas se for usar a interface web do MinIO
+sudo ufw enable
 ```
 
 ---
@@ -28,15 +28,15 @@ ufw enable
 ## 3. Instalar Redis Protegido
 
 ```bash
-apt install -y redis-server
-nano /etc/redis/redis.conf
+sudo apt install -y redis-server
+sudo nano /etc/redis/redis.conf
 # Adicione:
 requirepass SENHA_FORTE
 bind 127.0.0.1
 ```
 
 ```bash
-systemctl restart redis-server
+sudo systemctl restart redis-server
 ```
 
 ---
@@ -44,10 +44,10 @@ systemctl restart redis-server
 ## 4. Instalar RabbitMQ Protegido
 
 ```bash
-apt install -y rabbitmq-server
-rabbitmqctl add_user opencti_rabbit SENHA_FORTE
-rabbitmqctl add_vhost opencti
-rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
+sudo apt install -y rabbitmq-server
+sudo rabbitmqctl add_user opencti_rabbit SENHA_FORTE
+sudo rabbitmqctl add_vhost opencti
+sudo rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
 ```
 
 ---
@@ -55,7 +55,7 @@ rabbitmqctl set_permissions -p opencti opencti_rabbit ".*" ".*" ".*"
 ## 5. Instalar Elasticsearch Protegido
 
 ```bash
-apt install -y elasticsearch
+sudo apt install -y elasticsearch
 ```
 
 Editar `/etc/elasticsearch/elasticsearch.yml`:
@@ -67,9 +67,9 @@ http.host: localhost
 ```
 
 ```bash
-systemctl enable elasticsearch
-systemctl start elasticsearch
-/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
+sudo systemctl enable elasticsearch
+sudo systemctl start elasticsearch
+sudo /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
 ```
 
 > Use senha forte para o usuário `elastic`
@@ -79,14 +79,14 @@ systemctl start elasticsearch
 ## 6. Instalar MinIO com Usuário Restrito
 
 ```bash
-useradd -r -s /sbin/nologin minio-user
-mkdir -p /opt/minio/data
-chown -R minio-user:minio-user /opt/minio
+sudo useradd -r -s /sbin/nologin minio-user
+sudo mkdir -p /opt/minio/data
+sudo chown -R minio-user:minio-user /opt/minio
 ```
 
 ```bash
-wget https://dl.min.io/server/minio/release/linux-amd64/minio
-chmod +x minio && mv minio /usr/local/bin/
+sudo wget https://dl.min.io/server/minio/release/linux-amd64/minio
+sudo chmod +x minio && sudo mv minio /usr/local/bin/
 ```
 
 Criar o serviço `/etc/systemd/system/minio.service`:
@@ -99,7 +99,7 @@ After=network.target
 [Service]
 User=minio-user
 Group=minio-user
-ExecStart=/usr/local/bin/minio server /opt/minio/data --console-address ":9001"
+ExecStart=/usr/local/bin/minio server /opt/minio/data
 Environment="MINIO_ROOT_USER=opencti"
 Environment="MINIO_ROOT_PASSWORD=SENHA_FORTE"
 Restart=always
@@ -109,9 +109,9 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-systemctl daemon-reexec
-systemctl enable minio
-systemctl start minio
+sudo systemctl daemon-reexec
+sudo systemctl enable minio
+sudo systemctl start minio
 ```
 
 ---
@@ -119,8 +119,12 @@ systemctl start minio
 ## 7. Instalar OpenCTI (via Docker Compose)
 
 ```bash
-apt install -y docker.io docker-compose git
-cd /home/usuário
+sudo apt install -y docker.io docker-compose git
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+
+cd /home/$USER
 git clone https://github.com/OpenCTI-Platform/docker.git opencti
 cd opencti
 cp .env.sample .env
@@ -131,12 +135,14 @@ nano .env  # Configure senhas e conexões para Redis, RabbitMQ, Elastic, MinIO e
 docker-compose up -d
 ```
 
+> **💡 Dica:** Use volumes no docker-compose.yml para garantir persistência dos dados.
+
 ---
 
 ## 8. Configurar HTTPS com NGINX + Let's Encrypt
 
 ```bash
-apt install -y nginx certbot python3-certbot-nginx
+sudo apt install -y nginx certbot python3-certbot-nginx
 ```
 
 Crie `/etc/nginx/sites-available/opencti.conf`:
@@ -158,9 +164,9 @@ server {
 ```
 
 ```bash
-ln -s /etc/nginx/sites-available/opencti.conf /etc/nginx/sites-enabled/
-nginx -t && systemctl restart nginx
-certbot --nginx -d opencti.seudominio.com.br
+sudo ln -s /etc/nginx/sites-available/opencti.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl restart nginx
+sudo certbot --nginx -d opencti.seudominio.com.br
 ```
 
 ---
@@ -168,9 +174,9 @@ certbot --nginx -d opencti.seudominio.com.br
 ## 9. Ativar Proteção Contra Força Bruta (Fail2Ban)
 
 ```bash
-apt install -y fail2ban
-systemctl enable fail2ban
-systemctl start fail2ban
+sudo apt install -y fail2ban
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
 ```
 
 Crie ou edite `/etc/fail2ban/jail.local`:
@@ -185,7 +191,7 @@ bantime = 1h
 ```
 
 ```bash
-systemctl restart fail2ban
+sudo systemctl restart fail2ban
 ```
 
 ---
@@ -214,4 +220,4 @@ docker-compose logs -f
 
 ---
 
-Pronto! O OpenCTI está instalado de forma **segura** e pronta para **ambientes de produção**.
+✅ OpenCTI pronto para produção de forma **segura** e **estruturada**.
