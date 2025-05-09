@@ -1,7 +1,8 @@
 # Manual de Instalação – SOC-SIEM com Wazuh
 
-Ambiente: **Debian 12 Minimalista**  
-Ferramentas: **Wazuh Manager + Wazuh Indexer + Wazuh Dashboard**  
+>Ambiente: **Debian 12 Minimalista**
+> 
+>Ferramentas: **Wazuh Manager + Wazuh Indexer + Wazuh Dashboard**  
 
 ---
 
