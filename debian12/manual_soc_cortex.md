@@ -164,7 +164,7 @@ cortex {
   servers = [
     {
       name = "Cortex"
-      url = "http://10.0.3.12:9001"
+      url = "http://10.0.200.12:9001"
       key = "senha_forte"
       authType = "apiKey"
     }
