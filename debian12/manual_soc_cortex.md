@@ -1,7 +1,8 @@
 # Manual de Instalação - soc-cortex (Cortex)
 
-**Ferramenta:** Cortex
-**Sistema Operacional Base:** Debian 12 Minimalista
+>**Ferramenta:** Cortex
+>
+>**Sistema Operacional Base:** Debian 12 Minimalista
 
 ---
 
