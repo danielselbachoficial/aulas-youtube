@@ -183,7 +183,7 @@ ufw reload
 ## ✅ 17. Acessar o Wazuh Dashboard
 
 ```
-https://IP_DO_SERVIDOR:5601
+http://IP_DO_SERVIDOR:5601
 ```
 
 - Usuário: `admin`  
@@ -191,11 +191,50 @@ https://IP_DO_SERVIDOR:5601
 
 ---
 
-## ✅ 18. Checklist Final
+## ✅ 18. Instalar o Agente Linux
+
+```bash
+curl -sO https://packages.wazuh.com/4.x/wazuh-agent_4.12.0-1_amd64.deb
+dpkg -i wazuh-agent_4.12.0-1_amd64.deb
+
+nano /var/ossec/etc/ossec.conf
+# Altere o IP do servidor (wazuh-manager) conforme seu ambiente
+
+systemctl enable wazuh-agent
+systemctl start wazuh-agent
+```
+
+---
+
+## ✅ 19. Checklist Final
 
 - [x] IP fixo configurado
 - [x] Certificados aplicados
 - [x] Segurança inicializada com sucesso
 - [x] Senha do admin atualizada
-- [x] Dashboard acessível por HTTPS
+- [x] Dashboard acessível por HTTP
 - [x] Serviços ativos e configurados para iniciar com o sistema
+- [x] Agente Linux instalado e apontando para o Manager
+
+---
+
+## ✅ 19. Instalar o Wazuh Agent no Windows
+
+1. Baixe o instalador do agente no site oficial:
+   [https://packages.wazuh.com/4.x/windows/wazuh-agent-4.12.0-1.msi](https://packages.wazuh.com/4.x/windows/wazuh-agent-4.12.0-1.msi)
+
+2. Instale o agente manualmente ou via linha de comando:
+
+```powershell
+msiexec.exe /i "C:\caminho\para\wazuh-agent-4.12.0-1.msi" /quiet WAZUH_MANAGER="IP_DO_WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="IP_DO_WAZUH_MANAGER"
+```
+
+3. Após a instalação, inicie o serviço:
+
+```powershell
+net start wazuh
+```
+
+4. Verifique se o agente apareceu no Dashboard.
+
+---
