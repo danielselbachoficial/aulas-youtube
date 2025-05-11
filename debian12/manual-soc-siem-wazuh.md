@@ -61,7 +61,28 @@ apt install wazuh-dashboard -y
 
 ---
 
-## ✅ 7. Habilitar os serviços para iniciar no boot
+## ✅ 7. Ajustar o IP de Acesso do Wazuh Indexer
+Edite o seguinte arquivo:
+```bash
+nano /etc/wazuh-indexer/opensearch.yml
+```
+Para acesso interno (localhost ou rede privada):
+```bash
+network.host: "0.0.0.0"
+```
+Permitirá conexões de qualquer IP (mais flexível para redes internas).
+
+Para acesso externo (VM em nuvem com IP público fixo):
+```bash
+network.host: "SEU_IP_PUBLICO_FIXO"
+```
+Salve o arquivo e continue.
+
+---
+
+---
+
+## ✅ 8. Habilitar os serviços para iniciar no boot
 
 ```bash
 systemctl enable wazuh-indexer
@@ -71,7 +92,7 @@ systemctl enable wazuh-dashboard
 
 ---
 
-## ✅ 8. Iniciar os serviços
+## ✅ 9. Iniciar os serviços
 
 ```bash
 systemctl start wazuh-indexer
@@ -81,7 +102,7 @@ systemctl start wazuh-dashboard
 
 ---
 
-## ✅ 9. Aguardar o Wazuh Indexer subir
+## ✅ 10. Aguardar o Wazuh Indexer subir
 
 ```bash
 echo "Aguardando Wazuh Indexer iniciar (60 segundos)..."
@@ -90,7 +111,7 @@ sleep 60
 
 ---
 
-## ✅ 10. Configurar a senha do usuário admin no Indexer
+## ✅ 11. Configurar a senha do usuário admin no Indexer
 
 ```bash
 /usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh --admin-password Wazuh2025!
@@ -100,7 +121,7 @@ sleep 60
 
 ---
 
-## ✅ 11. Corrigir o Dashboard para usar o admin correto
+## ✅ 12. Corrigir o Dashboard para usar o admin correto
 
 ```bash
 sed -i 's|opensearch.username:.*|opensearch.username: "admin"|' /etc/wazuh-dashboard/opensearch_dashboards.yml
@@ -110,7 +131,7 @@ sed -i 's|opensearch.ssl.verificationMode:.*|opensearch.ssl.verificationMode: no
 
 ---
 
-## ✅ 12. Reiniciar o Dashboard
+## ✅ 13. Reiniciar o Dashboard
 
 ```bash
 systemctl restart wazuh-dashboard
@@ -118,7 +139,7 @@ systemctl restart wazuh-dashboard
 
 ---
 
-## ✅ 13. Liberar portas no Firewall (UFW) 
+## ✅ 14. Liberar portas no Firewall (UFW) 
 
 ```bash
 ufw allow 5601/tcp
@@ -132,7 +153,7 @@ ufw reload
 
 ---
 
-## ✅ 14. Acessar no Navegador
+## ✅ 15. Acessar no Navegador
 
 ```
 http://IP_DO_SERVIDOR:5601
@@ -143,8 +164,9 @@ http://IP_DO_SERVIDOR:5601
 
 ---
 
-## ✅ 15. Checklist Pós-Instalação
+## ✅ 16. Checklist Pós-Instalação
 
 - [x] IP fixo configurado  
-- [x] Firewall liberado: 9200, 5601, 1514/udp  
+- [x] Arquivo opensearch.yml com IP correto
+- [x] Firewall liberado: 9200, 5601, 1514/udp 
 - [x] Serviços ativos: Wazuh Manager, Indexer e Dashboard
