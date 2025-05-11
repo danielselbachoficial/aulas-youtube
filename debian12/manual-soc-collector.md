@@ -83,4 +83,4 @@ systemctl restart filebeat
 
 ---
 
-**Atenção:** Este coletor envia logs localmente para o Logstash na porta `5044`. Para ambientes remotos, ajuste `output.logstash.hosts` com o IP do servidor Logstash.
+**⚠️ Atenção:** Este coletor envia logs localmente para o Logstash na porta `5044`. Para ambientes remotos, ajuste `output.logstash.hosts` com o IP do servidor Logstash.
