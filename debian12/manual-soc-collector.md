@@ -8,7 +8,7 @@
 
 ---
 
-## ✅ 2.1 Atualizar Sistema
+## ✅ 2.1 Atualizar Sistema e Instalar Dependências
 
 ```bash
 apt update && apt upgrade -y
@@ -20,10 +20,9 @@ apt install -y apt-transport-https wget curl gnupg2 lsb-release
 ## ✅ 2.2 Adicionar Repositório Elastic Stack
 
 ```bash
-wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg
+curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg
 
-echo "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" \
-| tee /etc/apt/sources.list.d/elastic-8.x.list
+echo "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-8.x.list
 
 apt update
 ```
