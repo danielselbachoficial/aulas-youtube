@@ -55,10 +55,12 @@ systemctl status logstash
 ---
 
 ## ✅ 2.5 Configurar Filebeat para Enviar para Logstash
-
-Editar o arquivo `/etc/filebeat/filebeat.yml` e configurar a saída para o Logstash:
+Edite o arquivo `/etc/filebeat/filebeat.yml` e comente a saída padrão para Elasticsearch, habilitando apenas a saída para Logstash:
 
 ```yaml
+#output.elasticsearch:
+#  hosts: ["http://localhost:9200"]
+
 output.logstash:
   hosts: ["localhost:5044"]
 ```
