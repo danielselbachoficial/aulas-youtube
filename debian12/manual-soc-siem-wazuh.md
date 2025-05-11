@@ -1,3 +1,4 @@
+
 # Manual de Instalação – SOC-SIEM com Wazuh
 
 > Ambiente: **Debian 12 Minimalista**  
@@ -53,128 +54,113 @@ apt install wazuh-indexer wazuh-manager wazuh-dashboard -y
 
 ---
 
-## ✅ 7. Gerar os Certificados TLS
-
-```bash
-cd /opt
-wget https://github.com/wazuh/wazuh-cert-tool/archive/refs/tags/v4.12.0.zip -O wazuh-cert-tool.zip
-unzip wazuh-cert-tool.zip
-mv wazuh-cert-tool-4.12.0 wazuh-cert-tool
-cd wazuh-cert-tool
-```
-
-Crie ou edite o `config.yml` com seu IP fixo público ou interno:
-
-```yaml
-nodes:
-  indexer:
-    - name: node-1
-      ip: 199.9.9.9
-  server:
-    - name: manager
-      ip: 199.9.9.9
-  dashboard:
-    - name: dashboard
-      ip: 199.9.9.9
-
-defaults:
-  days_valid: 365
-  country: BR
-  state: Santa Catarina
-  locality: Palhoça
-  organization: Efesios Tech
-  organizational_unit: SOC
-```
-
-Gere os certificados:
-
-```bash
-bash wazuh-certs-tool.sh -A
-```
-
-Copie os certificados gerados para o Indexer:
-
-```bash
-mkdir -p /etc/wazuh-indexer/certs
-cp wazuh-certificates/* /etc/wazuh-indexer/certs/
-chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
-```
-
----
-
-## ✅ 8. Configurar IP e certificados no Indexer
-
-Edite o arquivo:
+## ✅ 7. Ajustar o IP de Acesso do Wazuh Indexer
 
 ```bash
 nano /etc/wazuh-indexer/opensearch.yml
 ```
 
-Ajuste os seguintes parâmetros:
+Para acesso interno:
+```yaml
+network.host: "0.0.0.0"
+```
+
+Para acesso externo (nuvem):
+```yaml
+network.host: "SEU_IP_PUBLICO_FIXO"
+```
+
+---
+
+## ✅ 8. Gerar Certificados
+
+```bash
+cd /opt
+curl -L https://github.com/wazuh/wazuh-cert-tool/archive/refs/tags/v4.12.0.zip -o wazuh-cert-tool.zip
+unzip wazuh-cert-tool.zip
+mv wazuh-cert-tool-4.12.0 wazuh-cert-tool
+cd wazuh-cert-tool
+chmod +x wazuh-certs-tool.sh
+./wazuh-certs-tool.sh -A
+```
+
+Copie os certificados gerados para `/etc/wazuh-indexer/certs`.
+
+---
+
+## ✅ 9. Ajustar o `opensearch.yml` com DN do Admin
+
+Adicione no final do arquivo:
 
 ```yaml
-network.host: "199.9.9.9"
-node.name: "node-1"
+plugins.security.authcz.admin_dn:
+  - "CN=admin,OU=SOCFortress,O=SOCFortress,L=Texas,C=US"
 
-plugins.security.ssl.http.pemcert_filepath: /etc/wazuh-indexer/certs/node-1.pem
-plugins.security.ssl.http.pemkey_filepath: /etc/wazuh-indexer/certs/node-1-key.pem
-plugins.security.ssl.http.pemtrustedcas_filepath: /etc/wazuh-indexer/certs/root-ca.pem
-
-plugins.security.ssl.transport.pemcert_filepath: /etc/wazuh-indexer/certs/node-1.pem
-plugins.security.ssl.transport.pemkey_filepath: /etc/wazuh-indexer/certs/node-1-key.pem
-plugins.security.ssl.transport.pemtrustedcas_filepath: /etc/wazuh-indexer/certs/root-ca.pem
+plugins.security.nodes_dn:
+  - "CN=node-1,OU=Wazuh,O=Wazuh,L=California,C=US"
 ```
 
 ---
 
-## ✅ 9. Habilitar os serviços para iniciar no boot
+## ✅ 10. Habilitar os Serviços no Boot
 
 ```bash
-systemctl enable wazuh-indexer
-systemctl enable wazuh-manager
-systemctl enable wazuh-dashboard
+systemctl enable wazuh-indexer wazuh-manager wazuh-dashboard
 ```
 
 ---
 
-## ✅ 10. Iniciar os serviços
+## ✅ 11. Iniciar os Serviços
 
 ```bash
-systemctl start wazuh-indexer
-systemctl start wazuh-manager
-systemctl start wazuh-dashboard
+systemctl start wazuh-indexer wazuh-manager wazuh-dashboard
 ```
 
 ---
 
-## ✅ 11. Aguardar o Wazuh Indexer subir
+## ✅ 12. Inicializar Segurança do Wazuh Indexer
 
 ```bash
-echo "Aguardando Wazuh Indexer iniciar (60 segundos)..."
-sleep 60
+export JAVA_HOME=/usr/share/wazuh-indexer/jdk/
+cd /usr/share/wazuh-indexer/plugins/opensearch-security/tools/
+
+./securityadmin.sh \
+  -cd /etc/wazuh-indexer/opensearch-security/ \
+  -icl \
+  -key /etc/wazuh-indexer/certs/admin-key.pem \
+  -cert /etc/wazuh-indexer/certs/admin.pem \
+  -cacert /etc/wazuh-indexer/certs/root-ca.pem \
+  -nhnv \
+  -p 9200
 ```
 
 ---
 
-## ✅ 12. Definir senha do usuário `admin` no Indexer
+## ✅ 13. Alterar Senha do Usuário Admin
 
 ```bash
-/usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh --admin-password Wazuh2025!
+/usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh \
+--user admin \
+--password 'Wazuh2025+' \
+--cert /etc/wazuh-indexer/certs/admin.pem \
+--certkey /etc/wazuh-indexer/certs/admin-key.pem
 ```
+
+⚠️ A senha deve conter letras maiúsculas, minúsculas, números e símbolo (`.*+?-`).
 
 ---
 
-## ✅ 13. Corrigir o Dashboard para usar o usuário admin
+## ✅ 14. Corrigir o Dashboard com Senha Atualizada
 
 ```bash
 sed -i 's|opensearch.username:.*|opensearch.username: "admin"|' /etc/wazuh-dashboard/opensearch_dashboards.yml
-sed -i 's|opensearch.password:.*|opensearch.password: "Wazuh2025!"|' /etc/wazuh-dashboard/opensearch_dashboards.yml
+sed -i 's|opensearch.password:.*|opensearch.password: "Wazuh2025+"|' /etc/wazuh-dashboard/opensearch_dashboards.yml
 sed -i 's|opensearch.ssl.verificationMode:.*|opensearch.ssl.verificationMode: none|' /etc/wazuh-dashboard/opensearch_dashboards.yml
 ```
 
 ---
 
-## ✅ 14. Reiniciar o Dashboard
+## ✅ 15. Reiniciar o Dashboard
 
 ```bash
 systemctl restart wazuh-dashboard
@@ -182,7 +168,7 @@ systemctl restart wazuh-dashboard
 
 ---
 
-## ✅ 15. Liberar portas no Firewall (UFW)
+## ✅ 16. Liberar Portas no Firewall
 
 ```bash
 ufw allow 5601/tcp
@@ -192,25 +178,24 @@ ufw allow 1515/tcp
 ufw reload
 ```
 
-> Se não estiver usando o UFW, ignore esta etapa.
-
 ---
 
-## ✅ 16. Acessar no Navegador
+## ✅ 17. Acessar o Wazuh Dashboard
 
 ```
 https://IP_DO_SERVIDOR:5601
 ```
 
-- **Usuário:** `admin`  
-- **Senha:** `Wazuh2025!`
+- Usuário: `admin`  
+- Senha: `Wazuh2025+`
 
 ---
 
-## ✅ 17. Checklist Pós-Instalação
+## ✅ 18. Checklist Final
 
-- [x] IP fixo configurado (privado ou público)
-- [x] Certificados configurados corretamente
-- [x] Arquivo `opensearch.yml` ajustado
-- [x] Firewall liberado: 9200, 5601, 1514/udp
-- [x] Serviços ativos: Wazuh Indexer, Manager, Dashboard
+- [x] IP fixo configurado
+- [x] Certificados aplicados
+- [x] Segurança inicializada com sucesso
+- [x] Senha do admin atualizada
+- [x] Dashboard acessível por HTTPS
+- [x] Serviços ativos e configurados para iniciar com o sistema
