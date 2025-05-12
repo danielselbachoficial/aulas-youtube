@@ -75,11 +75,22 @@ systemctl start elasticsearch
 ## ✅ 4. Instalar o Cortex
 
 ```bash
+# 1. Criar diretório e entrar nele
 mkdir -p /opt/cortex && cd /opt/cortex
-wget https://download.thehive-project.org/releases/cortex-3.1.7.zip
-unzip cortex-3.1.7.zip
-mv cortex-3.1.7 cortex
+
+# 2. Baixar a versão correta
+wget https://download.thehive-project.org/cortex-3.1.7-1.zip
+
+# 3. Descompactar
+unzip cortex-3.1.7-1.zip
+
+# 4. Renomear pasta para facilitar
+mv cortex-3.1.7-1 cortex
+
+# 5. Criar usuário e grupo do sistema (se ainda não existir)
 adduser --system --no-create-home --group cortex
+
+# 6. Ajustar permissões
 chown -R cortex:cortex /opt/cortex
 ```
 
