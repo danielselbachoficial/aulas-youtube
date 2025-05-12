@@ -251,6 +251,51 @@ cortex {
 }
 ```
 
+### Como obter a API Key no TheHive (via Docker)
+
+1. Acesse o TheHive via navegador:
+```bash
+https://thehive.seudominio.com.br
+```
+
+2. Faça login com seu usuário administrador:
+Exemplo (caso ainda não tenha mudado):
+```bash
+Usuário: admin@thehive.local
+Senha: secret
+```
+
+3. No canto superior direito, clique no avatar (ícone do usuário) e selecione:
+```bash
+➜ “API Keys”
+```
+
+4. Clique em “Generate API Key”.
+
+5. Dê um nome para a chave, como:
+```bash
+Cortex Integration
+```
+
+6. Clique em “Generate” e copie a chave gerada imediatamente (ela não será mostrada novamente).
+
+7. Teste a integração
+
+Depois de reiniciar o serviço do Cortex, acesse a GUI do Cortex e vá em:
+```bash
+Settings → TheHive Servers → Add Server
+```
+
+Ou, no próprio TheHive:
+```bash
+Settings → Cortex Servers → Add Cortex
+```
+
+Use:
+URL do Cortex
+A mesma API Key (mas no sentido inverso, se for do TheHive para o Cortex)
+
+
 ## ✅ 11. Backup Manual e Cron
 ```bash
 mkdir -p /opt/backup/cortex
