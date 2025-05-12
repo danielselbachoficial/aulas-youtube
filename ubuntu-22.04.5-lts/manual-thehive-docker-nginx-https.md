@@ -1,85 +1,64 @@
-# Manual de Instalação – TheHive 5.2.8-1 com HTTPS (Domínio Público + NGINX + Let's Encrypt)
 
-> Versão: **TheHive 5.2.8-1 via Docker**  
-> Ambiente: Produção com domínio público e certificado SSL válido  
-> Autor: Daniel Selbach Figueiró – Efésios Tech
+# ✅ Padrão de Produção Segura - TheHive com Docker e NGINX (HTTPS + Domínio Público)
 
----
-
-## ✅ Requisitos
-
-- Domínio público válido (ex: `thehive.seudominio.com.br`)
-- DNS apontado para o IP público da VM
-- Acesso root ou sudo
-- VM Ubuntu Server 22.04 LTS
-- Docker + Docker Compose instalados
-- Portas 80 e 443 liberadas no firewall externo
+Ambiente orientado à produção exige previsibilidade, automação e isolamento de serviços.  
+Este padrão define o modelo recomendado para executar o TheHive com segurança em ambiente Docker, com proxy reverso NGINX e certificado SSL Let's Encrypt.
 
 ---
 
-## ✅ 1. Configuração da VM
+## ✅ Melhor Caminho para Produção Segura
 
-### IP Estático com Netplan
+### 💡 Recomendado: Usar apenas NGINX em container (Docker)
 
-```bash
-sudo nano /etc/netplan/00-installer-config.yaml
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    ens18:
-      dhcp4: no
-      addresses: [192.168.20.13/24]
-      gateway4: 192.168.20.1
-      nameservers:
-        addresses: [1.1.1.1, 8.8.8.8]
-```
+Ao utilizar todo o stack via Docker, você garante isolamento, previsibilidade e automação — pilares essenciais para ambientes seguros e escaláveis.
 
-```bash
-sudo netplan apply
-```
+---
 
-## ✅ 2. Instalar Docker + Docker Compose
+## 🚀 Instalação do Zero
+
+### 🔧 1. Atualizar o sistema e instalar dependências básicas
+
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y ca-certificates curl gnupg lsb-release
+sudo apt install -y curl unzip ca-certificates gnupg lsb-release software-properties-common
+```
 
+---
+
+### 🐳 2. Instalar Docker e Docker Compose
+
+```bash
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-sudo apt update -y
+sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-compose
 ```
 
+---
 
+### 🔐 3. Instalar Certbot e emitir certificado SSL Let's Encrypt (modo standalone)
 
-## ✅ 3. Estrutura de Diretórios
+```bash
+sudo apt install certbot -y
+sudo certbot certonly --standalone -d thehive.seudominio.com.br
+```
+
+---
+
+### 🗂️ 4. Estrutura de Diretórios
+
 ```bash
 mkdir -p ~/thehive/nginx/conf.d
 cd ~/thehive
 ```
 
-## ✅ 4. Instalar Certbot para Let's Encrypt
-```bash
-sudo apt install certbot python3-certbot-nginx -y
-```
+---
 
+### 📝 5. Criar arquivo docker-compose.yml com NGINX, TheHive e Elasticsearch
 
-## ✅ 5. Emitir Certificado SSL
-Pare o NGINX se necessário:
-```bash
-sudo systemctl stop nginx
-```
-
-### Execute o Certbot:
-```bash
-sudo certbot certonly --standalone -d thehive.seudominio.com.br
-```
-
-
-## ✅ 6. Criar docker-compose.yml
-```bash
+```yaml
 version: "3.8"
 
 services:
@@ -99,7 +78,7 @@ services:
       - esdata:/usr/share/elasticsearch/data
     networks:
       - thehive
-    restart: unless-stopped
+    restart: always
 
   thehive:
     image: strangebee/thehive:5.2.8-1
@@ -112,7 +91,12 @@ services:
       - thehive_data:/opt/thehive/data
     networks:
       - thehive
-    restart: unless-stopped
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   nginx:
     image: nginx:stable
@@ -127,7 +111,7 @@ services:
       - "443:443"
     networks:
       - thehive
-    restart: unless-stopped
+    restart: always
 
 volumes:
   esdata:
@@ -137,9 +121,17 @@ networks:
   thehive:
 ```
 
-## ✅ 7. Configurar o NGINX
-Arquivo: ~/thehive/nginx/conf.d/thehive.conf
-```bash
+---
+
+### ⚙️ 6. Criar proxy reverso no arquivo `nginx/conf.d/thehive.conf`
+
+```nginx
+server {
+    listen 80;
+    server_name thehive.seudominio.com.br;
+    return 301 https://$host$request_uri;
+}
+
 server {
     listen 443 ssl;
     server_name thehive.seudominio.com.br;
@@ -162,42 +154,38 @@ server {
 }
 ```
 
-## ✅ 8. Subir os Containers
+---
+
+### 🚀 7. Subir os containers
+
 ```bash
+cd ~/thehive
 docker-compose up -d
 ```
 
-## ✅ 9. Acessar o TheHive via HTTPS
-```bash
-https://thehive.seudominio.com.br
-```
+---
 
-Credenciais padrão:
-```bash
-Usuário: admin@thehive.local
-Senha: secret
-```
->Altere imediatamente após o primeiro login!
+### 🔁 8. Renovação automática do certificado
 
-## 🔁 Renovação Automática do Certificado
 ```bash
 sudo crontab -e
-
-Choose 1-4 [1]: 1
 ```
 
-### Adicione:
+Adicione as linhas:
+
 ```bash
 0 3 * * * certbot renew --quiet --post-hook "docker restart nginx"
+@reboot sleep 30 && docker restart nginx
 ```
 
-## ✅ Checklist Final
+---
 
-| Etapa                                                    | Status |
-|----------------------------------------------------------|--------|
-| DNS do domínio configurado corretamente                  | ✅     |
-| Certbot e certificados da Let's Encrypt ativos           | ✅     |
-| Proxy reverso NGINX configurado corretamente             | ✅     |
-| Containers Docker operando com persistência              | ✅     |
-| Acesso via HTTPS com domínio válido funcionando          | ✅     |
-| Certificados renováveis automaticamente com cron         | ✅     |
+## ✅ Benefícios do Padrão
+
+| **Benefício**                 | **Explicação**                                                                 |
+|------------------------------|--------------------------------------------------------------------------------|
+| **Isolamento**               | Todo o stack está dentro de containers, sem conflitos com serviços do host     |
+| **Facilidade de Deploy**     | `docker-compose up -d` levanta tudo de forma prática e controlada              |
+| **Compatibilidade com Certbot** | O hook `docker restart nginx` no `crontab` funciona sem interferência externa |
+| **Evita Conflitos de Porta** | O NGINX do host desabilitado elimina disputas nas portas 80/443                |
+| **Automatização com Compose**| Permite `restart: always`, rollback rápido, versionamento e CI/CD              |
