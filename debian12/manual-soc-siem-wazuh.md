@@ -5,6 +5,8 @@
 > Domínio: **wazuh.seudominio.com.br**
 > 
 > Componentes: **Wazuh Manager + Indexer + Dashboard**
+> 
+>  **Autor:** Daniel Selbach Figueiró – Efésios Tech
 
 ---
 
