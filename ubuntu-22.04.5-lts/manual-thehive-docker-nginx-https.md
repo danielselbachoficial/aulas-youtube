@@ -8,7 +8,7 @@
 
 ## ✅ Requisitos
 
-- Domínio público válido (ex: `thehive.efesiostech.com`)
+- Domínio público válido (ex: `thehive.seudominio.com.br`)
 - DNS apontado para o IP público da VM
 - Acesso root ou sudo
 - VM Ubuntu Server 22.04 LTS
@@ -74,7 +74,7 @@ sudo systemctl stop nginx
 
 ### Execute o Certbot:
 ```bash
-sudo certbot certonly --standalone -d thehive.efesiostech.com
+sudo certbot certonly --standalone -d thehive.seudominio.com.br
 ```
 
 
@@ -142,10 +142,10 @@ Arquivo: ~/thehive/nginx/conf.d/thehive.conf
 ```bash
 server {
     listen 443 ssl;
-    server_name thehive.efesiostech.com;
+    server_name thehive.seudominio.com.br;
 
-    ssl_certificate /etc/letsencrypt/live/thehive.efesiostech.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/thehive.efesiostech.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/thehive.seudominio.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/thehive.seudominio.com.br/privkey.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
