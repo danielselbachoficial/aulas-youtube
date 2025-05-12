@@ -1,7 +1,9 @@
 # Manual de Instalação - SOC-SIEM com Wazuh (Ambiente HTTPS com Domínio)
 
 > Ambiente: **Debian 12 Minimalista - Produção em Nuvem**
+> 
 > Domínio: **wazuh.seudominio.com.br**
+> 
 > Componentes: **Wazuh Manager + Indexer + Dashboard**
 
 ---
