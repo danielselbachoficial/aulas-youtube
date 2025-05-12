@@ -287,13 +287,22 @@ nano /etc/wazuh-dashboard/opensearch_dashboards.yml
 ```
 
 ```yaml
-server.host: "0.0.0.0"
+server.host: "127.0.0.1"
+server.port: 5601
 server.name: wazuh-dashboard
+
 opensearch.hosts: ["https://indexer.seudominio.com.br:9200"]
 opensearch.ssl.verificationMode: none
 opensearch.username: "admin"
 opensearch.password: "Wazuh2025+"
-opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
+opensearch.requestHeadersAllowlist: ["securitytenant", "Authorization"]
+
+opensearch_security.multitenancy.enabled: false
+opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+
+server.ssl.enabled: false
+
+uiSettings.overrides.defaultRoute: /app/wz-home
 ```
 
 ---
@@ -302,6 +311,10 @@ opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
 
 ```bash
 systemctl restart wazuh-dashboard
+sleep 5
+ss -tulnp | grep 5601
+sleep 5
+nginx -t && systemctl reload nginx
 ```
 
 ---
