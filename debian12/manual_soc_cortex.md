@@ -260,12 +260,15 @@ tar -czvf /opt/backup/cortex_backup_$(date +%F).tar.gz /opt/cortex/conf /opt/cor
 ```
 
 ### Agendar backup diário:
+```bash
 crontab -e
 Choose 1-4 [1]: 1
+```
 
 ### Adicione:
+```bash
 0 2 * * * tar -czf /opt/backup/cortex_backup_$(date +\%F).tar.gz /opt/cortex/conf /opt/cortex/data
-
+```
 
 ## ✅ Checklist Final
 
