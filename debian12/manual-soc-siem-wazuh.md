@@ -83,6 +83,24 @@ chmod +x wazuh-certs-tool.sh
 
 ```
 
+# Ajuste o arquivo config.yml
+```bash
+nodes:
+  - name: indexer-node
+    ip: <indexer-node-ip>
+>
+# Substitua pelo IP ou FQDN real do seu node. Exemplo:
+nodes:
+  - name: indexer-node
+    ip: 192.168.1.10
+>
+# Ou, se você está usando hostname (recomendado se tiver DNS configurado):
+nodes:
+  - name: indexer-node
+    ip: indexer01.seudominio.com.br
+```
+Se for usar mais de um node (em HA), adicione abaixo com nomes e IPs diferentes.
+
 # Copie os certificados gerados para `/etc/wazuh-indexer/certs`
 ```bash
 mkdir -p /etc/wazuh-indexer/certs
