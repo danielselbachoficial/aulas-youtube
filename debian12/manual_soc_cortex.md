@@ -235,7 +235,8 @@ systemctl restart nginx
 ```
 
 ## ✅ 10. Integração com TheHive
-Adicione ao application.conf do TheHive:
+Adicione ao application.conf do TheHive no caminho:
+nano /opt/thehive/conf/application.conf
 
 ```bash
 cortex {
