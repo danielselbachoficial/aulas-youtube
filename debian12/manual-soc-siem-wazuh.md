@@ -8,7 +8,7 @@
 
 ---
 
-## ✅ 1. Atualizar o Sistema
+# ✅ 1. Atualizar o Sistema
 
 ```bash
 apt update && apt upgrade -y
@@ -16,7 +16,7 @@ apt update && apt upgrade -y
 
 ---
 
-## ✅ 2. Instalar Pré-requisitos
+# ✅ 2. Instalar Pré-requisitos
 
 ```bash
 apt install curl apt-transport-https lsb-release gnupg2 unzip -y
@@ -24,7 +24,7 @@ apt install curl apt-transport-https lsb-release gnupg2 unzip -y
 
 ---
 
-## ✅ 3. Adicionar chave GPG do Wazuh
+# ✅ 3. Adicionar chave GPG do Wazuh
 
 ```bash
 curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --dearmor -o /usr/share/keyrings/wazuh.gpg
@@ -32,7 +32,7 @@ curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --dearmor -o /usr/sha
 
 ---
 
-## ✅ 4. Adicionar o Repositório do Wazuh
+# ✅ 4. Adicionar o Repositório do Wazuh
 
 ```bash
 echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" > /etc/apt/sources.list.d/wazuh.list
@@ -40,7 +40,7 @@ echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4
 
 ---
 
-## ✅ 5. Atualizar os repositórios
+# ✅ 5. Atualizar os repositórios
 
 ```bash
 apt update -y
@@ -48,7 +48,7 @@ apt update -y
 
 ---
 
-## ✅ 6. Instalar os componentes do Wazuh
+# ✅ 6. Instalar os componentes do Wazuh
 
 ```bash
 apt install wazuh-indexer wazuh-manager wazuh-dashboard -y
@@ -56,7 +56,7 @@ apt install wazuh-indexer wazuh-manager wazuh-dashboard -y
 
 ---
 
-## ✅ 7. Ajustar IP do Indexer
+# ✅ 7. Ajustar IP do Indexer
 
 ```bash
 nano /etc/wazuh-indexer/opensearch.yml
@@ -68,7 +68,7 @@ network.host: "0.0.0.0"
 
 ---
 
-## ✅ 8. Gerar certificados personalizados
+# ✅ 8. Gerar certificados personalizados
 
 ```bash
 cd /opt
@@ -117,7 +117,7 @@ nodes:
 
 ---
 
-## ✅ 9. Copiar certificados para os diretórios corretos
+# ✅ 9. Copiar certificados para os diretórios corretos
 
 ```bash
 # Indexer
@@ -146,7 +146,7 @@ chmod 600 /etc/wazuh-manager/certs/*
 
 ---
 
-## ✅ 10. Ajustar opensearch.yml com DNs no /etc/wazuh-indexer/opensearch.yml
+# ✅ 10. Ajustar opensearch.yml com DNs no /etc/wazuh-indexer/opensearch.yml
 
 ```yaml
 plugins.security.authcz.admin_dn:
@@ -157,7 +157,7 @@ plugins.security.nodes_dn:
 
 ---
 
-## ✅ 11. Ajustar permissões
+# ✅ 11. Ajustar permissões
 
 ```bash
 # Define o dono correto dos arquivos (necessário para o Indexer)
@@ -173,7 +173,7 @@ chmod 750 /etc/wazuh-indexer/certs
 
 ---
 
-## ✅ 12. Ajustar o arquivo /etc/wazuh-indexer/opensearch.yml
+# ✅ 12. Ajustar o arquivo /etc/wazuh-indexer/opensearch.yml
 
 ```bash
 network.host: "0.0.0.0"
@@ -238,7 +238,7 @@ compatibility.override_main_response_version: true
 
 ---
 
-## ✅ 13. Habilitar e iniciar os serviços
+# ✅ 13. Habilitar e iniciar os serviços
 
 ```bash
 systemctl daemon-reexec
@@ -250,7 +250,7 @@ systemctl start wazuh-dashboard
 
 ---
 
-## ✅ 14. Inicializar o Security Admin
+# ✅ 14. Inicializar o Security Admin
 
 ```bash
 export JAVA_HOME=/usr/share/wazuh-indexer/jdk/
@@ -268,7 +268,7 @@ cd /usr/share/wazuh-indexer/plugins/opensearch-security/tools/
 
 ---
 
-## ✅ 15. Atualizar senha do Admin
+# ✅ 15. Atualizar senha do Admin
 
 ```bash
 /usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh \
@@ -280,7 +280,7 @@ cd /usr/share/wazuh-indexer/plugins/opensearch-security/tools/
 
 ---
 
-## ✅ 15. Atualizar configuração do Dashboard
+# ✅ 15. Atualizar configuração do Dashboard
 
 ```bash
 nano /etc/wazuh-dashboard/opensearch_dashboards.yml
@@ -298,7 +298,7 @@ opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
 
 ---
 
-## ✅ 16. Reiniciar Dashboard
+# ✅ 16. Reiniciar Dashboard
 
 ```bash
 systemctl restart wazuh-dashboard
@@ -306,7 +306,7 @@ systemctl restart wazuh-dashboard
 
 ---
 
-## ✅ 17. Configurar HTTPS com NGINX + Certbot
+# ✅ 17. Configurar HTTPS com NGINX + Certbot
 
 ```bash
 apt install nginx python3-certbot-nginx -y
@@ -343,7 +343,7 @@ certbot --nginx -d wazuh.seudominio.com.br
 
 ---
 
-## ✅ 18. Responder as mensagens de geração de certificado SSL
+# ✅ 18. Responder as mensagens de geração de certificado SSL
 
 ```bash
 root@srv132:/usr/share/wazuh-indexer/plugins/opensearch-security/tools# certbot --nginx -d wazuh.seudominio.com.br
@@ -391,7 +391,7 @@ If you like Certbot, please consider supporting our work by:
 
 ---
 
-## ✅ 19. Acessar via HTTPS
+# ✅ 19. Acessar via HTTPS
 
 ```bash
 https://wazuh.seudominio.com.br
@@ -401,7 +401,7 @@ Senha: Wazuh2025+
 Vai informar "Não seguro" ao lado de https.
 
 
-## ✅ 20. Ajuste o /etc/nginx/sites-available/wazuh
+# ✅ 20. Ajuste o /etc/nginx/sites-available/wazuh
 ```bash
 server {
     listen 80;
@@ -438,10 +438,10 @@ server {
 nginx -t && systemctl reload nginx
 ```
 
-## ✅ 21. Automatizar a renovação do certificado + reload do NGINX
+# ✅ 21. Automatizar a renovação do certificado + reload do NGINX
 Existem duas formas confiáveis de garantir que o certificado seja renovado automaticamente e que o NGINX seja recarregado após a renovação.
 
-# ✅ Opção 1 – Usar Hook pós-renovação (método recomendado)
+## ✅ Opção 1 – Usar Hook pós-renovação (método recomendado)
 🔒 Recomendado para ambientes de produção: só recarrega o NGINX quando o certificado for realmente renovado.
 ```bash
 mkdir -p /etc/letsencrypt/renewal-hooks/post/
@@ -454,7 +454,7 @@ EOF
 chmod +x /etc/letsencrypt/renewal-hooks/post/reload-nginx.sh
 ```
 
-✅ Opção 2 – Usar Crontab direto (funciona, mas recarrega sempre)
+## ✅ Opção 2 – Usar Crontab direto (funciona, mas recarrega sempre)
 Útil em ambientes de teste, ambientes simples ou quando você quer garantir o reload diário mesmo que não haja renovação.
 ```bash
 echo "0 3 * * * root certbot renew --quiet && systemctl reload nginx" >> /etc/crontab
