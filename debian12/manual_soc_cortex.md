@@ -252,10 +252,12 @@ cortex {
 ```
 
 ## ✅ 11. Backup Manual e Cron
+```bash
 mkdir -p /opt/backup/cortex
 cp -r /opt/cortex/conf /opt/backup/cortex/
 cp -r /opt/cortex/data /opt/backup/cortex/
 tar -czvf /opt/backup/cortex_backup_$(date +%F).tar.gz /opt/cortex/conf /opt/cortex/data
+```
 
 ### Agendar backup diário:
 crontab -e
