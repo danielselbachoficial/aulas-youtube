@@ -28,7 +28,7 @@ Valor: IP público do servidor
 Valide com:
 
 ```bash
-dig opencti.efesiostech.com +short
+dig opencti.seudominio.com.br +short
 ```
 
 ---
@@ -81,7 +81,7 @@ Conteúdo:
 ```nginx
 server {
     listen 80;
-    server_name opencti.efesiostech.com;
+    server_name opencti.seudominio.com.br;
 
     location / {
         proxy_pass http://localhost:8080;
@@ -106,7 +106,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ## 🔐 4. Gerar Certificado HTTPS com Let's Encrypt
 
 ```bash
-sudo certbot --nginx -d opencti.efesiostech.com
+sudo certbot --nginx -d opencti.seudominio.com.br
 ```
 
 > O Certbot irá configurar o redirecionamento de HTTP para HTTPS automaticamente.
@@ -167,7 +167,7 @@ sops -d .env.enc > .env
 Acesse sua instância em:
 
 ```
-https://opencti.efesiostech.com
+https://opencti.seudominio.com.br
 ```
 
 Login padrão:
@@ -176,7 +176,3 @@ Login padrão:
 - **Senha:** changeme
 
 > Altere a senha após o primeiro login.
-
----
-
-Gerado em: 12/05/2025
