@@ -234,59 +234,63 @@ nginx -t
 systemctl restart nginx
 ```
 
-## ✅ 10. Integração com TheHive
-Adicione ao application.conf do TheHive no caminho:
-nano /opt/thehive/conf/application.conf
+## ✅ 10. Integração do Cortex → TheHive
 
+O que você precisa:
+1. A URL pública do TheHive
+2. Uma API Key gerada no TheHive
+3. Inserir essas informações no application.conf do Cortex
+
+### O que fazer para integrar TheHive (Docker) com o Cortex (instalado nativamente):
+
+### 1. Gerar API Key no TheHive
+Acesse:
 ```bash
-cortex {
+https://thehive.seudominio.com.br
+```
+
+2. Faça login como admin
+3. Vá no menu superior direito → "API Keys"
+4. Clique em "Generate API Key"
+5. Nomeie como "Cortex Integration", copie a chave gerada.
+
+### 2. Editar application.conf do Cortex
+Abra o arquivo:
+nano /opt/cortex/conf/application.conf
+
+E adicione no final:
+```bash
+thehive {
   servers = [
     {
-      name = "Cortex"
-      url = "https://cortex.seudominio.com.br"
-      key = "senha_forte"
+      name = "TheHive"
+      url = "https://thehive.seudominio.com.br"
+      key = "SUA_API_KEY_AQUI"
       authType = "apiKey"
     }
   ]
 }
 ```
 
-### O que fazer para integrar TheHive (Docker) com o Cortex (instalado nativamente):
-1. Gere a API Key no Cortex
-No navegador, acesse:
+### 3. Reinicie o Cortex
+```bash
+systemctl restart cortex
+```
+
+### 4. Teste a integração
+1. Acesse o Cortex via navegador:
 ```bash
 https://cortex.seudominio.com.br
 ```
 
-2. Acesse o TheHive no navegador:
+2. Vá em Settings → TheHive Servers
+3. Você deve ver o TheHive listado.
+
+Se quiser adicionar manualmente por interface, também pode usar:
 ```bash
-https://thehive.seudominio.com.br
+Settings → TheHive Servers → Add Server
 ```
-
-Vá em Settings → Cortex Servers
-Clique em “+ Add Cortex Server”
-Preencha:
-
-### ✅ Integração TheHive → Cortex
-
-| Campo       | Valor                                        |
-|-------------|----------------------------------------------|
-| **Name**    | Cortex                                       |
-| **URL**     | https://cortex.seudominio.com.br             |
-| **Key**     | (cole a API Key que copiou no passo anterior)|
-| **Auth Type** | API Key                                   |
-| **Enabled** | ✅                                            |
-
-
-Clique em "Test Connection"
-Se aparecer verde, integração feita com sucesso!
-Salve.
-
-Faça login com o usuário definido no users.conf (ex: cortexAdmin)
-
-Vá em Settings → API Keys
-Clique em "Generate API Key"
-Dê um nome (ex: "TheHive Integration") e copie a chave
+Use os mesmos dados que colocou no application.conf.
 
 
 ## ✅ 11. Backup Manual e Cron
