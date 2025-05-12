@@ -76,18 +76,8 @@ network.host: "SEU_IP_PUBLICO_FIXO"
 
 ```bash
 cd /opt
-
-# Baixa o .zip
-wget https://github.com/wazuh/wazuh-cert-tool/archive/refs/tags/v4.12.0.zip
-
-# Extrai o conteúdo
-unzip v4.12.0.zip
-
-# Renomeia para facilitar
-mv wazuh-cert-tool-4.12.0 wazuh-cert-tool
-cd wazuh-cert-tool
-
-# Dá permissão de execução e executa
+curl -sO https://packages.wazuh.com/4.12/wazuh-certs-tool.sh
+curl -sO https://packages.wazuh.com/4.12/config.yml
 chmod +x wazuh-certs-tool.sh
 ./wazuh-certs-tool.sh -A
 
