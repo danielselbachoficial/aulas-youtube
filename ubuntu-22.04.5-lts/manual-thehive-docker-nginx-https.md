@@ -182,6 +182,8 @@ Senha: secret
 ## 🔁 Renovação Automática do Certificado
 ```bash
 sudo crontab -e
+
+Choose 1-4 [1]: 1
 ```
 
 ### Adicione:
