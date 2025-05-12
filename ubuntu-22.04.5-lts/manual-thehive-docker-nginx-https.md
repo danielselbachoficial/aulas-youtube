@@ -89,6 +89,7 @@ services:
       - JAVA_OPTS=-Xms512m -Xmx2g
     volumes:
       - thehive_data:/opt/thehive/data
+      - ./config/application.conf:/opt/thehive/conf/application.conf
     networks:
       - thehive
     restart: always
@@ -119,6 +120,7 @@ volumes:
 
 networks:
   thehive:
+
 ```
 
 ---
