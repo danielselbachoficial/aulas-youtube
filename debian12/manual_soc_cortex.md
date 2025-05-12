@@ -102,6 +102,11 @@ Gere a chave do application.conf com:
 openssl rand -hex 32
 ```
 
+Crie o diretório conf dentro do /opt/cortex:
+```bash
+mkdir -p /opt/cortex/conf
+```
+
 nano /opt/cortex/conf/application.conf
 
 ```bash
