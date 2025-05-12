@@ -1,6 +1,8 @@
 # 🧠 OpenCTI – Instalação com Domínio Público, HTTPS e Proxy Reverso
 
 > Ambiente seguro em produção com domínio público, NGINX, Let's Encrypt e práticas recomendadas.
+> 
+>  **Autor:** Daniel Selbach Figueiró – Efésios Tech
 
 ---
 
