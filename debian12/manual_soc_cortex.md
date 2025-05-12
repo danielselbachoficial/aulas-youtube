@@ -123,13 +123,6 @@ chown -R cortex:cortex /opt/cortex
 ```
 
 ## ✅ 6. Criar `users.conf` com senha criptografada
-
-Gerar hash Bcrypt:
-
-```bash
-python3 -c "from passlib.hash import bcrypt; print(bcrypt.hash('SenhaForteAqui'))"
-```
-
 Edite:
 
 ```bash
@@ -141,7 +134,7 @@ Exemplo:
 ```hocon
 cortexAdmin = {
   type: local
-  password: "$2b$12$HASH_BCRYPT_AQUI"
+  password: "SUA-SENHA-FORTE"
   roles: ["read", "write", "admin"]
 }
 ```
