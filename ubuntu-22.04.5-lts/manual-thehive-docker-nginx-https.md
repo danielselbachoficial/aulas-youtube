@@ -1,35 +1,28 @@
-# Manual de Instalação do TheHive 5.2.8-1 com HTTPS (NGINX + Certificado Local)
+# Manual de Instalação – TheHive 5.2.8-1 com HTTPS (Domínio Público + NGINX + Let's Encrypt)
 
-Versão do TheHive: **5.2.8-1 via Docker**  
-Ambiente: Produção com HTTPS (Certificado Autoassinado ou Interno)  
+> Versão: **TheHive 5.2.8-1 via Docker**  
+> Ambiente: Produção com domínio público e certificado SSL válido  
+> Autor: Daniel Selbach Figueiró – Efésios Tech
 
 ---
 
 ## ✅ Requisitos
 
-- Domínio local resolvido internamente (ex: `thehive.exemplo.local`)
-- VM Ubuntu Server 22.04 LTS
+- Domínio público válido (ex: `thehive.efesiostech.com`)
+- DNS apontado para o IP público da VM
 - Acesso root ou sudo
-- Docker e Docker Compose instalados
-- Porta 80 e 443 liberadas (internamente)
+- VM Ubuntu Server 22.04 LTS
+- Docker + Docker Compose instalados
+- Portas 80 e 443 liberadas no firewall externo
 
 ---
 
-## 1. Configuração da VM
-
-| Recurso | Valor sugerido |
-|--------|----------------|
-| CPU    | 2 vCPU         |
-| RAM    | 4 GB           |
-| Disco  | 20 GB SSD      |
+## ✅ 1. Configuração da VM
 
 ### IP Estático com Netplan
 
 ```bash
 sudo nano /etc/netplan/00-installer-config.yaml
-```
-
-```yaml
 network:
   version: 2
   renderer: networkd
@@ -46,10 +39,7 @@ network:
 sudo netplan apply
 ```
 
----
-
-## 2. Instalar Docker + Docker Compose
-
+## ✅ 2. Instalar Docker + Docker Compose
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y ca-certificates curl gnupg lsb-release
@@ -62,26 +52,34 @@ sudo apt update -y
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-compose
 ```
 
-Verifique:
-```bash
-systemctl status docker
-```
 
----
 
-## 3. Estrutura de Diretórios
-
+## ✅ 3. Estrutura de Diretórios
 ```bash
 mkdir -p ~/thehive/nginx/conf.d
-mkdir -p ~/thehive/certs
 cd ~/thehive
 ```
 
----
+## ✅ 4. Instalar Certbot para Let's Encrypt
+```bash
+sudo apt install certbot python3-certbot-nginx -y
+```
 
-## 4. Criar `docker-compose.yml`
 
-```yaml
+## ✅ 5. Emitir Certificado SSL
+Pare o NGINX se necessário:
+```bash
+sudo systemctl stop nginx
+```
+
+### Execute o Certbot:
+```bash
+sudo certbot certonly --standalone -d thehive.efesiostech.com
+```
+
+
+## ✅ 6. Criar docker-compose.yml
+```bash
 version: "3.8"
 
 services:
@@ -123,7 +121,7 @@ services:
       - thehive
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./certs:/etc/nginx/certs
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
       - "80:80"
       - "443:443"
@@ -139,19 +137,15 @@ networks:
   thehive:
 ```
 
----
-
-## 5. Configurar o NGINX
-
-Arquivo: `~/thehive/nginx/conf.d/thehive.conf`
-
-```nginx
+## ✅ 7. Configurar o NGINX
+Arquivo: ~/thehive/nginx/conf.d/thehive.conf
+```bash
 server {
     listen 443 ssl;
-    server_name thehive.exemplo.local;
+    server_name thehive.efesiostech.com;
 
-    ssl_certificate /etc/nginx/certs/thehive.crt;
-    ssl_certificate_key /etc/nginx/certs/thehive.key;
+    ssl_certificate /etc/letsencrypt/live/thehive.efesiostech.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/thehive.efesiostech.com/privkey.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
@@ -168,68 +162,40 @@ server {
 }
 ```
 
----
-
-## 6. Gerar Certificado Local (Opcional)
-
-```bash
-openssl req -x509 -newkey rsa:4096 -nodes -keyout certs/thehive.key -out certs/thehive.crt -days 365 -subj "/C=BR/ST=SC/L=Cidade/O=Exemplo/CN=thehive.exemplo.local"
-```
-
----
-
-## 7. Subir os Containers
-
+## ✅ 8. Subir os Containers
 ```bash
 docker-compose up -d
 ```
 
----
-
-## 8. Acessar o TheHive com HTTPS
-
-Adicione no seu `hosts` local:
-```
-10.0.3.11 thehive.exemplo.local
+## ✅ 9. Acessar o TheHive via HTTPS
+```bash
+https://thehive.seudominio.com.br
 ```
 
-Depois acesse via navegador:
+Credenciais padrão:
+```bash
+Usuário: admin@thehive.local
+Senha: secret
 ```
-https://thehive.exemplo.local
-```
+>Altere imediatamente após o primeiro login!
 
-**Credenciais iniciais:**
-- Usuário: `admin@thehive.local`
-- Senha: `secret`
-
-> Altere a senha após o primeiro login!
-
----
-
-## 9. (Opcional) Agendar Renovação Let's Encrypt
-
-Se estiver usando domínio válido com Let's Encrypt:
-
+## 🔁 Renovação Automática do Certificado
 ```bash
 sudo crontab -e
 ```
 
+### Adicione:
 ```bash
-0 3 * * * cd /home/SEU_USUARIO/thehive && docker-compose run --rm certbot renew --webroot --webroot-path=/var/lib/letsencrypt && docker-compose restart nginx
+0 3 * * * certbot renew --quiet --post-hook "docker restart nginx"
 ```
 
----
+## ✅ Checklist Final
 
-## 4.10. ✅ Checklist Final
-
-| Etapa                                                      | Status |
-|------------------------------------------------------------|--------|
-| Domínio configurado e resolvido                            | ✅     |
-| Docker e Docker Compose instalados                         | ✅     |
-| Certificado SSL funcional                                  | ✅     |
-| Proxy reverso (NGINX) redirecionando para TheHive          | ✅     |
-| Login e senha padrão alterados                             | ✅     |
-| Containers com restart automático                          | ✅     |
-| Certbot com cronjob ativo (se aplicável)                   | ✅     |
-| Volumes persistentes para dados e configurações            | ✅     |
-| Teste de acesso via navegador concluído                    | ✅     |
+| Etapa                                                    | Status |
+|----------------------------------------------------------|--------|
+| DNS do domínio configurado corretamente                  | ✅     |
+| Certbot e certificados da Let's Encrypt ativos           | ✅     |
+| Proxy reverso NGINX configurado corretamente             | ✅     |
+| Containers Docker operando com persistência              | ✅     |
+| Acesso via HTTPS com domínio válido funcionando          | ✅     |
+| Certificados renováveis automaticamente com cron         | ✅     |
