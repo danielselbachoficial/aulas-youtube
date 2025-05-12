@@ -1,20 +1,20 @@
 # Manual de Instalação - SOC-Cortex (com HTTPS e Proxy Reverso)
 
-> **Ferramenta:** Cortex 3.1.7  
-> **Sistema Operacional:** Debian 12 Minimalista  
-> **Ambiente:** Produção com domínio público e certificado SSL Let's Encrypt  
+> **Ferramenta:** Cortex 3.1.7
+> **Sistema Operacional:** Debian 12 Minimalista
+> **Ambiente:** Produção com domínio público e certificado SSL Let's Encrypt
 > **Autor:** Daniel Selbach Figueiró – Efésios Tech
 
 ---
 
 ## ✅ Requisitos
 
-- Domínio público válido (ex: `cortex.seudominio.com.br`)
-- DNS apontado para o IP da VM
-- Acesso root
-- Portas 80 e 443 liberadas
-- Instalação mínima do Debian 12
-- IP fixo configurado na rede
+* Domínio público válido (ex: `cortex.seudominio.com.br`)
+* DNS apontado para o IP da VM
+* Acesso root
+* Portas 80 e 443 liberadas
+* Instalação mínima do Debian 12
+* IP fixo configurado na rede
 
 ---
 
@@ -23,9 +23,8 @@
 ```bash
 sudo apt update
 sudo apt install -y wget gnupg apt-transport-https git ca-certificates \
-  ca-certificates-java curl software-properties-common python3-pip lsb-release unzip
+  ca-certificates-java curl software-properties-common python3-pip lsb-release unzip python3-venv
 ```
-
 
 ## ✅ 2. Instalar Java 11 (Amazon Corretto)
 
@@ -38,14 +37,14 @@ echo "deb [signed-by=/usr/share/keyrings/corretto.gpg] https://apt.corretto.aws 
 sudo apt update
 sudo apt install -y java-common java-11-amazon-corretto-jdk
 
-echo JAVA_HOME="/usr/lib/jvm/java-11-amazon-corretto" | sudo tee -a /etc/environment
-export JAVA_HOME="/usr/lib/jvm/java-11-amazon-corretto"
+echo 'export JAVA_HOME="/usr/lib/jvm/java-11-amazon-corretto"' | sudo tee /etc/profile.d/java.sh
+source /etc/profile.d/java.sh
 
 java -version
 ```
 
-
 ## ✅ 3. Instalar Elasticsearch 7.x
+
 ```bash
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | \
   sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
@@ -57,59 +56,53 @@ sudo apt update
 sudo apt install -y elasticsearch
 ```
 
-### Editar configuração:
-nano /etc/elasticsearch/elasticsearch.yml
+### Editar configuração Elasticsearch:
 
 ```bash
+nano /etc/elasticsearch/elasticsearch.yml
+```
+
+Conteúdo sugerido:
+
+```yaml
 cluster.name: cortex-cluster
 network.host: 127.0.0.1
 http.port: 9200
+```
 
------------
+```bash
 systemctl daemon-reload
 systemctl enable elasticsearch
 systemctl start elasticsearch
 ```
 
-
 ## ✅ 4. Instalar o Cortex
 
 ```bash
-# 1. Criar diretório e entrar nele
 mkdir -p /opt/cortex && cd /opt/cortex
-
-# 2. Baixar a versão correta
 wget https://download.thehive-project.org/cortex-3.1.7-1.zip
-
-# 3. Descompactar
 unzip cortex-3.1.7-1.zip
-
-# 4. Renomear pasta para facilitar
 mv cortex-3.1.7-1 cortex
-
-# 5. Criar usuário e grupo do sistema (se ainda não existir)
 adduser --system --no-create-home --group cortex
-
-# 6. Ajustar permissões
 chown -R cortex:cortex /opt/cortex
 ```
 
-
-## ✅ 5. Gerar a chave e criar application.conf
-Gere a chave do application.conf com:
+## ✅ 5. Gerar chave JWT e configurar `application.conf`
 
 ```bash
 openssl rand -hex 32
 ```
 
-Crie o diretório conf dentro do /opt/cortex:
+Crie:
+
 ```bash
 mkdir -p /opt/cortex/conf
+nano /opt/cortex/conf/application.conf
 ```
 
-nano /opt/cortex/conf/application.conf
+Exemplo:
 
-```bash
+```hocon
 play.http.secret.key = "CHAVE_SECRETA_GERADA"
 
 play.server.http.address = "127.0.0.1"
@@ -125,39 +118,51 @@ search {
 }
 ```
 
-
-Ajustar permissões:
 ```bash
 chown -R cortex:cortex /opt/cortex
 ```
 
+## ✅ 6. Criar `users.conf` com senha criptografada
 
-## ✅ 6. Criar users.conf
-nano /opt/cortex/conf/users.conf
+Gerar hash Bcrypt:
 
 ```bash
+python3 -c "from passlib.hash import bcrypt; print(bcrypt.hash('SenhaForteAqui'))"
+```
+
+Edite:
+
+```bash
+nano /opt/cortex/conf/users.conf
+```
+
+Exemplo:
+
+```hocon
 cortexAdmin = {
   type: local
-  password: "SenhaForteAqui"
+  password: "$2b$12$HASH_BCRYPT_AQUI"
   roles: ["read", "write", "admin"]
 }
 ```
 
-
-## ✅ 7. Instalar cortexutils (Python)
+## ✅ 7. Instalar `cortexutils`
 
 ```bash
-apt install python3-venv -y
 python3 -m venv /opt/cortex/venv
 source /opt/cortex/venv/bin/activate
 pip install cortexutils
 ```
 
-
-## ✅ 8. Criar Serviço systemd
-nano /etc/systemd/system/cortex.service
+## ✅ 8. Criar serviço systemd para o Cortex
 
 ```bash
+nano /etc/systemd/system/cortex.service
+```
+
+Conteúdo:
+
+```ini
 [Unit]
 Description=Cortex Service
 After=network.target
@@ -173,35 +178,30 @@ LimitNOFILE=65536
 
 [Install]
 WantedBy=multi-user.target
-
 ```
 
-### Ativar serviço:
+Ativar:
 
 ```bash
 systemctl daemon-reload
 systemctl enable cortex
 systemctl start cortex
-systemctl status cortex
 ```
 
+## ✅ 9. Configurar HTTPS com NGINX (Proxy Reverso)
 
-## ✅ 9. Configurar Proxy Reverso com HTTPS (NGINX)
-
-### Instalar NGINX + Certbot
 ```bash
 apt install nginx certbot python3-certbot-nginx -y
-```
-
-### Gerar Certificado SSL
-```bash
 certbot --nginx -d cortex.seudominio.com.br
 ```
 
-### Criar arquivo NGINX
-nano /etc/nginx/sites-available/cortex
-
 ```bash
+nano /etc/nginx/sites-available/cortex
+```
+
+Conteúdo:
+
+```nginx
 server {
     listen 80;
     server_name cortex.seudominio.com.br;
@@ -226,40 +226,19 @@ server {
 }
 ```
 
-### Ativar o serviço:
-
 ```bash
 ln -s /etc/nginx/sites-available/cortex /etc/nginx/sites-enabled/
 nginx -t
 systemctl restart nginx
 ```
 
-## ✅ 10. Integração do Cortex → TheHive
+## ✅ 10. Integração com TheHive
 
-O que você precisa:
-1. A URL pública do TheHive
-2. Uma API Key gerada no TheHive
-3. Inserir essas informações no application.conf do Cortex
+1. Gere API Key no TheHive (menu > API Keys)
+2. Copie a chave
+3. Edite o `application.conf`:
 
-### O que fazer para integrar TheHive (Docker) com o Cortex (instalado nativamente):
-
-### 1. Gerar API Key no TheHive
-Acesse:
-```bash
-https://thehive.seudominio.com.br
-```
-
-2. Faça login como admin
-3. Vá no menu superior direito → "API Keys"
-4. Clique em "Generate API Key"
-5. Nomeie como "Cortex Integration", copie a chave gerada.
-
-### 2. Editar application.conf do Cortex
-Abra o arquivo:
-nano /opt/cortex/conf/application.conf
-
-E adicione no final:
-```bash
+```hocon
 thehive {
   servers = [
     {
@@ -272,28 +251,12 @@ thehive {
 }
 ```
 
-### 3. Reinicie o Cortex
 ```bash
 systemctl restart cortex
 ```
 
-### 4. Teste a integração
-1. Acesse o Cortex via navegador:
-```bash
-https://cortex.seudominio.com.br
-```
+## ✅ 11. Backup Manual e via `cron`
 
-2. Vá em Settings → TheHive Servers
-3. Você deve ver o TheHive listado.
-
-Se quiser adicionar manualmente por interface, também pode usar:
-```bash
-Settings → TheHive Servers → Add Server
-```
-Use os mesmos dados que colocou no application.conf.
-
-
-## ✅ 11. Backup Manual e Cron
 ```bash
 mkdir -p /opt/backup/cortex
 cp -r /opt/cortex/conf /opt/backup/cortex/
@@ -301,30 +264,34 @@ cp -r /opt/cortex/data /opt/backup/cortex/
 tar -czvf /opt/backup/cortex_backup_$(date +%F).tar.gz /opt/cortex/conf /opt/cortex/data
 ```
 
-### Agendar backup diário:
-```bash
-crontab -e
-Choose 1-4 [1]: 1
+Agendar no `crontab -e`:
+
+```cron
+0 2 * * * tar -czf /opt/backup/cortex_backup_$(date +\%F).tar.gz /opt/cortex/conf /opt/cortex/data
 ```
 
-### Adicione:
+## ✅ Firewall recomendado
+
 ```bash
-0 2 * * * tar -czf /opt/backup/cortex_backup_$(date +\%F).tar.gz /opt/cortex/conf /opt/cortex/data
+apt install ufw -y
+ufw allow 80,443/tcp
+ufw deny 9001
+ufw enable
 ```
 
 ## ✅ Checklist Final
 
-| Etapa                                                                 | Status |
-|-----------------------------------------------------------------------|--------|
-| DNS do domínio configurado corretamente                               | ✅     |
-| Certbot e certificados da Let's Encrypt ativos                        | ✅     |
-| Proxy reverso NGINX configurado corretamente                          | ✅     |
-| Chave secreta (JWT) gerada e aplicada no `application.conf`           | ✅     |
-| Arquivos `application.conf` e `users.conf` configurados corretamente  | ✅     |
-| Acesso via HTTPS com domínio válido funcionando                       | ✅     |
-| Porta 9001 restrita localmente (`127.0.0.1`) e protegida no firewall  | ✅     |
-| Elasticsearch 7.x ativo e integrado ao Cortex                         | ✅     |
-| Serviço systemd do Cortex rodando e habilitado                        | ✅     |
-| Integração com TheHive via API key testada com sucesso                | ✅     |
-| Backups manuais testados e agendamento via `cron` concluído           | ✅     |
-| Certificados SSL renováveis automaticamente via cron (`certbot`)      | ✅     |
+| Etapa                                                                | Status |
+| -------------------------------------------------------------------- | ------ |
+| DNS do domínio configurado corretamente                              | ✅      |
+| Certbot e certificados da Let's Encrypt ativos                       | ✅      |
+| Proxy reverso NGINX configurado corretamente                         | ✅      |
+| Chave secreta (JWT) gerada e aplicada no `application.conf`          | ✅      |
+| Arquivos `application.conf` e `users.conf` configurados corretamente | ✅      |
+| Acesso via HTTPS com domínio válido funcionando                      | ✅      |
+| Porta 9001 restrita localmente e protegida por firewall              | ✅      |
+| Elasticsearch 7.x ativo e integrado ao Cortex                        | ✅      |
+| Serviço systemd do Cortex rodando e habilitado                       | ✅      |
+| Integração com TheHive via API key testada com sucesso               | ✅      |
+| Backups manuais testados e agendamento via `cron` concluído          | ✅      |
+| Certificados SSL renováveis automaticamente via cron (`certbot`)     | ✅      |
