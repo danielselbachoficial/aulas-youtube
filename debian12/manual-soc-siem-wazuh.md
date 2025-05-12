@@ -76,12 +76,23 @@ network.host: "SEU_IP_PUBLICO_FIXO"
 
 ```bash
 cd /opt
-curl -L https://github.com/wazuh/wazuh-cert-tool/archive/refs/tags/v4.12.0.zip -o wazuh-cert-tool.zip
-unzip wazuh-cert-tool.zip
+
+# Baixar o tar.gz (não é .zip!)
+curl -L https://github.com/wazuh/wazuh-cert-tool/archive/refs/tags/v4.12.0.tar.gz -o wazuh-cert-tool.tar.gz
+
+# Extrair o conteúdo
+tar -xvzf wazuh-cert-tool.tar.gz
+
+# Renomear para facilitar
 mv wazuh-cert-tool-4.12.0 wazuh-cert-tool
+
+# Acessar pasta e dar permissão
 cd wazuh-cert-tool
 chmod +x wazuh-certs-tool.sh
+
+# Executar o gerador de certificados
 ./wazuh-certs-tool.sh -A
+
 ```
 
 Copie os certificados gerados para `/etc/wazuh-indexer/certs`.
