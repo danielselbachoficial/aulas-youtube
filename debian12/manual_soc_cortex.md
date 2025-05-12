@@ -251,49 +251,42 @@ cortex {
 }
 ```
 
-### Como obter a API Key no TheHive (via Docker)
+### O que fazer para integrar TheHive (Docker) com o Cortex (instalado nativamente):
+1. Gere a API Key no Cortex
+No navegador, acesse:
+```bash
+https://cortex.seudominio.com.br
+```
 
-1. Acesse o TheHive via navegador:
+2. Acesse o TheHive no navegador:
 ```bash
 https://thehive.seudominio.com.br
 ```
 
-2. Faça login com seu usuário administrador:
-Exemplo (caso ainda não tenha mudado):
-```bash
-Usuário: admin@thehive.local
-Senha: secret
-```
+Vá em Settings → Cortex Servers
+Clique em “+ Add Cortex Server”
+Preencha:
 
-3. No canto superior direito, clique no avatar (ícone do usuário) e selecione:
-```bash
-➜ “API Keys”
-```
+### ✅ Integração TheHive → Cortex
 
-4. Clique em “Generate API Key”.
+| Campo       | Valor                                        |
+|-------------|----------------------------------------------|
+| **Name**    | Cortex                                       |
+| **URL**     | https://cortex.seudominio.com.br             |
+| **Key**     | (cole a API Key que copiou no passo anterior)|
+| **Auth Type** | API Key                                   |
+| **Enabled** | ✅                                            |
 
-5. Dê um nome para a chave, como:
-```bash
-Cortex Integration
-```
 
-6. Clique em “Generate” e copie a chave gerada imediatamente (ela não será mostrada novamente).
+Clique em "Test Connection"
+Se aparecer verde, integração feita com sucesso!
+Salve.
 
-7. Teste a integração
+Faça login com o usuário definido no users.conf (ex: cortexAdmin)
 
-Depois de reiniciar o serviço do Cortex, acesse a GUI do Cortex e vá em:
-```bash
-Settings → TheHive Servers → Add Server
-```
-
-Ou, no próprio TheHive:
-```bash
-Settings → Cortex Servers → Add Cortex
-```
-
-Use:
-URL do Cortex
-A mesma API Key (mas no sentido inverso, se for do TheHive para o Cortex)
+Vá em Settings → API Keys
+Clique em "Generate API Key"
+Dê um nome (ex: "TheHive Integration") e copie a chave
 
 
 ## ✅ 11. Backup Manual e Cron
