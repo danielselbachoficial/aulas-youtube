@@ -497,7 +497,7 @@ Edite o arquivo e no bloco <client>, configure assim:
 ```bash
 <client>
   <server>
-    <address>wazuh.efesiostech.com</address>
+    <address>wazuh.seudominio.com.br</address>
     <port>1514</port>
     <protocol>tcp</protocol>
   </server>
@@ -525,7 +525,7 @@ Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.12.0
 
 ## ✅ 2. Instale com parâmetros personalizados
 ```bash
-msiexec.exe /i wazuh-agent.msi WAZUH_MANAGER="wazuh.efesiostech.com" WAZUH_REGISTRATION_SERVER="wazuh.efesiostech.com" /quiet
+msiexec.exe /i wazuh-agent.msi WAZUH_MANAGER="wazuh.seudominio.com.br" WAZUH_REGISTRATION_SERVER="wazuh.seudominio.com.br" /quiet
 ```
 
 ## ✅ 3. Inicie e configure para inicialização automática
