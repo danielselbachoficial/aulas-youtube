@@ -185,6 +185,7 @@ server {
 ```bash
 cd ~/thehive
 docker-compose up -d
+sleep 60
 ```
 
 ---
