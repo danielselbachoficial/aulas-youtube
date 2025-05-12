@@ -260,5 +260,5 @@ certbot --nginx -d wazuh.dominiovalido.com.br
 
 Acesse via HTTPS:
 ```
-https://wazuh.efesiostech.com
+https://wazuh.dominiovalido.com.br
 ```
