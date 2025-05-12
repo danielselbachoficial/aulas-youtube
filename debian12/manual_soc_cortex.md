@@ -125,6 +125,11 @@ search {
 }
 ```
 
+```bash
+Ajustar permissões:
+chown -R cortex:cortex /opt/cortex
+```
+
 
 ## ✅ 6. Criar users.conf
 nano /opt/cortex/conf/users.conf
