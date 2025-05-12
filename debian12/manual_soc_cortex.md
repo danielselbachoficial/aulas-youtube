@@ -125,8 +125,9 @@ search {
 }
 ```
 
-```bash
+
 Ajustar permissões:
+```bash
 chown -R cortex:cortex /opt/cortex
 ```
 
