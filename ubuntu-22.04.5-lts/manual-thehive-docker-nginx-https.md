@@ -1,4 +1,3 @@
-
 # ✅ Padrão de Produção Segura - TheHive com Docker e NGINX (HTTPS + Domínio Público)
 
 Ambiente orientado à produção exige previsibilidade, automação e isolamento de serviços.  
@@ -52,6 +51,30 @@ sudo certbot certonly --standalone -d thehive.seudominio.com.br
 ```bash
 mkdir -p ~/thehive/nginx/conf.d
 cd ~/thehive
+```
+
+---
+
+### 📝 4.1 Criar o arquivo application.conf com configuração mínima
+
+```bash
+rm -rf ~/thehive/config/application.conf
+mkdir -p ~/thehive/config
+nano ~/thehive/config/application.conf
+```
+
+Cole esse conteúdo:
+
+```hocon
+thehive {
+  play.http.port = 9000
+
+  db.provider = janusgraph
+  db.janusgraph.storage.backend = berkeleyje
+  db.janusgraph.storage.directory = /data/db
+  db.janusgraph.index.search.backend = lucene
+  db.janusgraph.index.search.directory = /data/index
+}
 ```
 
 ---
@@ -120,7 +143,6 @@ volumes:
 
 networks:
   thehive:
-
 ```
 
 ---
