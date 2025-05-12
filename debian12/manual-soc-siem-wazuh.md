@@ -104,7 +104,7 @@ Se for usar mais de um node (em HA), adicione abaixo com nomes e IPs diferentes.
 # Copie os certificados gerados para `/etc/wazuh-indexer/certs`
 ```bash
 mkdir -p /etc/wazuh-indexer/certs
-cp -r /opt/output/* /etc/wazuh-indexer/certs/
+cp -r /opt/wazuh-certificates/* /etc/wazuh-indexer/certs/
 ```
 
 ---
