@@ -87,7 +87,7 @@ adduser --system --no-create-home --group cortex
 chown -R cortex:cortex /opt/cortex
 ```
 
-## ✅ 5. Gerar chave JWT e configurar `application.conf`
+## ✅ 5. Gerar chave JWT (JSON Web Token) e configurar `application.conf`
 
 ```bash
 openssl rand -hex 32
