@@ -473,3 +473,63 @@ ufw allow 1514/tcp
 ufw allow 1515/tcp
 ufw reload
 ```
+
+
+## Instalação do Wazuh Agent no Linux
+
+# ✅ 1. Adicione a chave GPG e o repositório
+```bash
+curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --dearmor -o /usr/share/keyrings/wazuh.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" \
+  > /etc/apt/sources.list.d/wazuh.list
+
+apt update
+```
+
+# ✅ 2. Instale o agente
+```bash
+apt install wazuh-agent -y
+```
+
+# ✅ 3. Configure o agente
+Edite o arquivo e no bloco <client>, configure assim:
+```bash
+<client>
+  <server>
+    <address>wazuh.efesiostech.com</address>
+    <port>1514</port>
+    <protocol>tcp</protocol>
+  </server>
+</client>
+```
+Troque o address pelo seu domínio/IP do Wazuh Manager com acesso aberto na porta 1514 TCP.
+
+# ✅ 4. Habilite e inicie o agente
+```bash
+systemctl daemon-reexec
+systemctl enable wazuh-agent
+systemctl start wazuh-agent
+```
+
+## Instalação do Wazuh Agent no Windows
+
+# ✅ 1. Baixe o instalador oficial
+Acesse:
+🔗 https://packages.wazuh.com/4.x/windows/wazuh-agent-4.12.0-1.msi
+
+Ou baixe direto via PowerShell:
+```bash
+Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.12.0-1.msi -OutFile wazuh-agent.msi
+```
+
+# ✅ 2. Instale com parâmetros personalizados
+```bash
+msiexec.exe /i wazuh-agent.msi WAZUH_MANAGER="wazuh.efesiostech.com" WAZUH_REGISTRATION_SERVER="wazuh.efesiostech.com" /quiet
+```
+
+# ✅ 3. Inicie e configure para inicialização automática
+```bash
+Start-Service WazuhSvc
+Set-Service WazuhSvc -StartupType Automatic
+```
