@@ -15,7 +15,7 @@ Ambiente: Produção com HTTPS (Certificado Autoassinado ou Interno)
 
 ---
 
-## 4.1. Configuração da VM
+## 1. Configuração da VM
 
 | Recurso | Valor sugerido |
 |--------|----------------|
@@ -48,7 +48,7 @@ sudo netplan apply
 
 ---
 
-## 4.2. Instalar Docker + Docker Compose
+## 2. Instalar Docker + Docker Compose
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -69,7 +69,7 @@ systemctl status docker
 
 ---
 
-## 4.3. Estrutura de Diretórios
+## 3. Estrutura de Diretórios
 
 ```bash
 mkdir -p ~/thehive/nginx/conf.d
@@ -79,7 +79,7 @@ cd ~/thehive
 
 ---
 
-## 4.4. Criar `docker-compose.yml`
+## 4. Criar `docker-compose.yml`
 
 ```yaml
 version: "3.8"
@@ -141,7 +141,7 @@ networks:
 
 ---
 
-## 4.5. Configurar o NGINX
+## 5. Configurar o NGINX
 
 Arquivo: `~/thehive/nginx/conf.d/thehive.conf`
 
@@ -170,7 +170,7 @@ server {
 
 ---
 
-## 4.6. Gerar Certificado Local (Opcional)
+## 6. Gerar Certificado Local (Opcional)
 
 ```bash
 openssl req -x509 -newkey rsa:4096 -nodes -keyout certs/thehive.key -out certs/thehive.crt -days 365 -subj "/C=BR/ST=SC/L=Cidade/O=Exemplo/CN=thehive.exemplo.local"
@@ -178,7 +178,7 @@ openssl req -x509 -newkey rsa:4096 -nodes -keyout certs/thehive.key -out certs/t
 
 ---
 
-## 4.7. Subir os Containers
+## 7. Subir os Containers
 
 ```bash
 docker-compose up -d
@@ -186,7 +186,7 @@ docker-compose up -d
 
 ---
 
-## 4.8. Acessar o TheHive com HTTPS
+## 8. Acessar o TheHive com HTTPS
 
 Adicione no seu `hosts` local:
 ```
@@ -206,7 +206,7 @@ https://thehive.exemplo.local
 
 ---
 
-## 4.9. (Opcional) Agendar Renovação Let's Encrypt
+## 9. (Opcional) Agendar Renovação Let's Encrypt
 
 Se estiver usando domínio válido com Let's Encrypt:
 
