@@ -6,7 +6,7 @@
 
 ---
 
-## 5.1 Instalar Dependências Essenciais
+## 1. Instalar Dependências Essenciais
 
 ```bash
 sudo apt update
@@ -16,7 +16,7 @@ sudo apt install -y wget gnupg apt-transport-https git ca-certificates \
 
 ---
 
-## 5.2 Instalar o Java 11 (Amazon Corretto)
+## 2. Instalar o Java 11 (Amazon Corretto)
 
 ```bash
 wget -qO- https://apt.corretto.aws/corretto.key | sudo gpg --dearmor -o /usr/share/keyrings/corretto.gpg
@@ -35,7 +35,7 @@ java -version
 
 ---
 
-## 5.3 Instalar Elasticsearch 7.x
+## 3. Instalar Elasticsearch 7.x
 
 ```bash
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | \
@@ -65,7 +65,7 @@ systemctl status elasticsearch
 
 ---
 
-## 5.4 Instalar o Cortex
+## 4. Instalar o Cortex
 
 ```bash
 mkdir -p /opt/cortex && cd /opt/cortex
@@ -79,7 +79,7 @@ chown -R cortex:cortex /opt/cortex
 
 ---
 
-## 5.5 Criar arquivo `application.conf`
+## 5. Criar arquivo `application.conf`
 
 ```bash
 nano /opt/cortex/conf/application.conf
@@ -89,7 +89,7 @@ Insira a configuração mínima do Cortex no formato fornecido.
 
 ---
 
-## 5.6 Criar `users.conf`
+## 6. Criar `users.conf`
 
 ```bash
 nano /opt/cortex/conf/users.conf
@@ -107,7 +107,7 @@ cortexAdmin = {
 
 ---
 
-## 5.7 Instalar cortexutils (Python)
+## 7. Instalar cortexutils (Python)
 
 ```bash
 apt install python3-venv -y
@@ -118,7 +118,7 @@ pip install cortexutils
 
 ---
 
-## 5.8 Criar Serviço systemd
+## 8. Criar Serviço systemd
 
 ```bash
 nano /etc/systemd/system/cortex.service
