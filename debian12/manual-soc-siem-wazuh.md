@@ -1,7 +1,7 @@
 # Manual de Instalação - SOC-SIEM com Wazuh (Ambiente HTTPS com Domínio)
 
 > Ambiente: **Debian 12 Minimalista - Produção em Nuvem**
-> Domínio: **wazuh.efesiostech.com**
+> Domínio: **wazuh.seudominio.com.br**
 > Componentes: **Wazuh Manager + Indexer + Dashboard**
 
 ---
@@ -81,7 +81,7 @@ root-ca:
   days: 3650
   subject:
     CN: Wazuh Root CA
-    O: Efesios Tech
+    O: Nome da empresa
     C: BR
 
 admin:
@@ -96,15 +96,15 @@ admin:
 nodes:
   indexer:
     - name: indexer-node
-      ip: indexer.efesiostech.com
+      ip: indexer.seudominio.com.br
 
   dashboard:
     - name: dashboard
-      ip: wazuh.efesiostech.com
+      ip: wazuh.seudominio.com.br
 
   server:
     - name: wazuh-manager
-      ip: wazuh.efesiostech.com
+      ip: wazuh.seudominio.com.br
 ```
 
 ### Executar a geração
@@ -287,7 +287,7 @@ nano /etc/wazuh-dashboard/opensearch_dashboards.yml
 ```yaml
 server.host: "0.0.0.0"
 server.name: wazuh-dashboard
-opensearch.hosts: ["https://indexer.efesiostech.com:9200"]
+opensearch.hosts: ["https://indexer.seudominio.com.br:9200"]
 opensearch.ssl.verificationMode: none
 opensearch.username: "admin"
 opensearch.password: "Wazuh2025+"
@@ -320,7 +320,7 @@ nano /etc/nginx/sites-available/wazuh
 ```nginx
 server {
     listen 80;
-    server_name wazuh.efesiostech.com;
+    server_name wazuh.seudominio.com.br;
 
     location / {
         proxy_pass http://127.0.0.1:5601;
@@ -336,7 +336,7 @@ server {
 ```bash
 ln -s /etc/nginx/sites-available/wazuh /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
-certbot --nginx -d wazuh.efesiostech.com
+certbot --nginx -d wazuh.seudominio.com.br
 ```
 
 ---
@@ -344,10 +344,10 @@ certbot --nginx -d wazuh.efesiostech.com
 ## ✅ 18. Responder as mensagens de geração de certificado SSL
 
 ```bash
-root@srv132:/usr/share/wazuh-indexer/plugins/opensearch-security/tools# certbot --nginx -d wazuh.efesiostech.com
+root@srv132:/usr/share/wazuh-indexer/plugins/opensearch-security/tools# certbot --nginx -d wazuh.seudominio.com.br
 Saving debug log to /var/log/letsencrypt/letsencrypt.log
 Enter email address (used for urgent renewal and security notices)
- (Enter 'c' to cancel): monitoramento@efesiostech.com
+ (Enter 'c' to cancel): monitoramento@seudominio.com.br
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Please read the Terms of Service at
@@ -365,19 +365,19 @@ EFF news, campaigns, and ways to support digital freedom.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 (Y)es/(N)o: n
 Account registered.
-Requesting a certificate for wazuh.efesiostech.com
+Requesting a certificate for wazuh.seudominio.com.br
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Successfully received certificate.
-Certificate is saved at: /etc/letsencrypt/live/wazuh.efesiostech.com/fullchain.pem
-Key is saved at:         /etc/letsencrypt/live/wazuh.efesiostech.com/privkey.pem
+Certificate is saved at: /etc/letsencrypt/live/wazuh.seudominio.com.br/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/wazuh.seudominio.com.br/privkey.pem
 This certificate expires on 2025-08-10.
 These files will be updated when the certificate renews.
 Certbot has set up a scheduled task to automatically renew this certificate in the background.
 
 Deploying certificate
-Successfully deployed certificate for wazuh.efesiostech.com to /etc/nginx/sites-enabled/wazuh
-Congratulations! You have successfully enabled HTTPS on https://wazuh.efesiostech.com
+Successfully deployed certificate for wazuh.seudominio.com.br to /etc/nginx/sites-enabled/wazuh
+Congratulations! You have successfully enabled HTTPS on https://wazuh.seudominio.com.br
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 If you like Certbot, please consider supporting our work by:
@@ -392,7 +392,7 @@ If you like Certbot, please consider supporting our work by:
 ## ✅ 19. Acessar via HTTPS
 
 ```bash
-https://wazuh.efesiostech.com
+https://wazuh.seudominio.com.br
 Usuário: admin
 Senha: Wazuh2025+
 ```
@@ -403,7 +403,7 @@ Vai informar "Não seguro" ao lado de https.
 ```bash
 server {
     listen 80;
-    server_name wazuh.efesiostech.com;
+    server_name wazuh.seudominio.com.br;
 
     location / {
         return 301 https://$host$request_uri;
@@ -412,10 +412,10 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name wazuh.efesiostech.com;
+    server_name wazuh.seudominio.com.br;
 
-    ssl_certificate /etc/letsencrypt/live/wazuh.efesiostech.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/wazuh.efesiostech.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/wazuh.seudominio.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/wazuh.seudominio.com.br/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
