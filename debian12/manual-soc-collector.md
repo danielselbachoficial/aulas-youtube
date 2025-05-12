@@ -5,6 +5,8 @@
 > Ferramentas: **Filebeat + Logstash**
 > 
 > Sistema Operacional Base: **Debian 12 Minimalista**
+> 
+>  **Autor:** Daniel Selbach Figueiró – Efésios Tech
 
 ---
 
