@@ -176,6 +176,10 @@ Acesse: https://shuffle.seudominio.com.br
 ## 🧠 Observações
 
 - O item de backup deve ser implementado com `mongodump` diário + rsync/SFTP.
+- Automatize backups com mongodump + cron
+- Use Loki + Grafana para logs
+- Integre com TheHive 5.2.8 e ferramentas como VirusTotal, AbuseIPDB, Shodan
+- Use Traefik como alternativa moderna ao NGINX com auto-renovação embutida
 - Para ambientes com alta disponibilidade, considere replicação MongoDB e balanceador com HAProxy ou Traefik.
 - A autenticação padrão pode ser fortalecida com SSO (OAuth2, LDAP) se necessário.
 - Faça uma integração com TheHive 5.2.8 🔲
