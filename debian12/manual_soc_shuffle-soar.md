@@ -7,6 +7,23 @@
 
 ---
 
+## 🌍 Configurar DNS do Subdomínio
+
+No painel do seu provedor DNS, crie um registro:
+
+```
+Tipo: A
+Nome: shuffle
+Valor: IP público do servidor
+```
+
+Valide com:
+
+```bash
+dig shuffle.seudominio.com.br +short
+```
+
+
 ## 📦 1. Instalar dependências
 
 ```bash
