@@ -10,6 +10,23 @@
 
 ---
 
+## 🌍 Configurar DNS do Subdomínio
+
+No painel do seu provedor DNS, crie um registro:
+
+```
+Tipo: A
+Nome: wazuh
+Valor: IP público do servidor
+```
+
+Valide com:
+
+```bash
+dig wazuh.seudominio.com.br +short
+```
+
+
 # ✅ 1. Atualizar o Sistema
 
 ```bash
@@ -282,7 +299,7 @@ cd /usr/share/wazuh-indexer/plugins/opensearch-security/tools/
 
 ---
 
-# ✅ 15. Atualizar configuração do Dashboard
+# ✅ 16. Atualizar configuração do Dashboard
 
 ```bash
 nano /etc/wazuh-dashboard/opensearch_dashboards.yml
@@ -309,7 +326,7 @@ uiSettings.overrides.defaultRoute: /app/wz-home
 
 ---
 
-# ✅ 16. Reiniciar Dashboard
+# ✅ 17. Reiniciar Dashboard
 
 ```bash
 systemctl restart wazuh-dashboard
@@ -321,7 +338,7 @@ nginx -t && systemctl reload nginx
 
 ---
 
-# ✅ 17. Configurar HTTPS com NGINX + Certbot
+# ✅ 18. Configurar HTTPS com NGINX + Certbot
 
 ```bash
 apt install nginx python3-certbot-nginx -y
@@ -358,7 +375,7 @@ certbot --nginx -d wazuh.seudominio.com.br
 
 ---
 
-# ✅ 18. Responder as mensagens de geração de certificado SSL
+# ✅ 19. Responder as mensagens de geração de certificado SSL
 
 ```bash
 root@srv132:/usr/share/wazuh-indexer/plugins/opensearch-security/tools# certbot --nginx -d wazuh.seudominio.com.br
@@ -406,7 +423,7 @@ If you like Certbot, please consider supporting our work by:
 
 ---
 
-# ✅ 19. Acessar via HTTPS
+# ✅ 20. Acessar via HTTPS
 
 ```bash
 https://wazuh.seudominio.com.br
@@ -416,7 +433,7 @@ Senha: Wazuh2025+
 Vai informar "Não seguro" ao lado de https.
 
 
-# ✅ 20. Ajuste o /etc/nginx/sites-available/wazuh
+# ✅ 21. Ajuste o /etc/nginx/sites-available/wazuh
 ```bash
 server {
     listen 80;
@@ -453,7 +470,7 @@ server {
 nginx -t && systemctl reload nginx
 ```
 
-# ✅ 21. Automatizar a renovação do certificado + reload do NGINX
+# ✅ 22. Automatizar a renovação do certificado + reload do NGINX
 Existem duas formas confiáveis de garantir que o certificado seja renovado automaticamente e que o NGINX seja recarregado após a renovação.
 
 ## ✅ Opção 1 – Usar Hook pós-renovação (método recomendado)
@@ -479,7 +496,7 @@ certbot renew --dry-run
 ```
 ---
 
-## ✅ 22. Liberar portas no firewall
+## ✅ 23. Liberar portas no firewall
 
 ```bash
 ufw allow 5601/tcp
