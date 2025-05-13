@@ -1,9 +1,9 @@
 # 🛡️ Manual de Instalação – Shuffle SOAR em Produção com HTTPS
 
-> Ambiente: Debian 12 Minimal  
-> Autor: **Daniel Selbach Figueiró** – Efésios Tech  
-> Domínio público: `https://shuffle.seudominio.com.br`  
-> Última atualização: `13/05/2025`
+> **Ambiente:** Debian 12 
+> **Ferramenta:** Shuffle SOAR + MongoDB + NGINX + Let's Encrypt  
+> **Autor:** Daniel Selbach Figueiró – Efésios Tech  
+> **Data:** 13/05/2025  
 
 ---
 
@@ -156,23 +156,27 @@ sudo ufw enable
 Acesse: https://shuffle.seudominio.com.br
 ```
 
-✅ Checklist Final – Pronto para Produção
-Item	Status
-Shuffle executando via Docker Compose	✅
-Banco MongoDB com persistência	✅
-Proxy reverso com NGINX	✅
-HTTPS via Let's Encrypt	✅
-IPs controlados via UFW	✅
-Domínio público funcional	✅
-Autenticação segura (com CHAVE_SEGURA)	✅
-Backup de MongoDB via cron (opcional)	🔲
-Integração com TheHive 5.2.8	🔲
+---
 
-🧠 Dicas Avançadas
-Substitua MongoDB por PostgreSQL para ambientes com mais volume
+## 📋 Checklist Final – Pronto para Produção
 
-Automatize a geração de backup com mongodump e rsync
+| Item                                        | Status |
+|---------------------------------------------|--------|
+| Shuffle executando via Docker Compose       | ✅     |
+| Banco MongoDB com persistência              | ✅     |
+| Proxy reverso com NGINX                     | ✅     |
+| HTTPS via Let's Encrypt                     | ✅     |
+| IPs controlados via UFW                     | ✅     |
+| Domínio público funcional                   | ✅     |
+| Autenticação segura (`CHAVE_SEGURA` definida) | ✅     |
+| Backup de MongoDB via `cron` (opcional)     | 🔲     |
 
-Use Traefik como alternativa ao NGINX para deploys mais dinâmicos
+---
 
-Conecte com ferramentas como VirusTotal, AbuseIPDB, MISP e TheHive
+## 🧠 Observações
+
+- O item de backup deve ser implementado com `mongodump` diário + rsync/SFTP.
+- Para ambientes com alta disponibilidade, considere replicação MongoDB e balanceador com HAProxy ou Traefik.
+- A autenticação padrão pode ser fortalecida com SSO (OAuth2, LDAP) se necessário.
+- Faça uma integração com TheHive 5.2.8 🔲
+---
