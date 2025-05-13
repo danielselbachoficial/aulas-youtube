@@ -1,7 +1,10 @@
 # Manual Completo – Instalação Segura do SOC-Cortex Cortex em Nuvem (Produção)
 > **Ferramenta:** Cortex 3.1.7
+> 
 > **Sistema Operacional:** Debian 12 Minimalista
+> 
 > **Ambiente:** Produção com domínio público e certificado SSL Let's Encrypt
+> 
 > **Autor:** Daniel Selbach Figueiró – Efésios Tech
 
 ## Pré-Requisitos
