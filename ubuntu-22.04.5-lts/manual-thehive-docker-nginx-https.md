@@ -26,7 +26,7 @@ Valor: IP público do servidor
 Valide com:
 
 ```bash
-dig opencti.seudominio.com.br +short
+dig thehive.seudominio.com.br +short
 ```
 
 ---
