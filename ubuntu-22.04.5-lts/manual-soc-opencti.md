@@ -37,6 +37,14 @@ dig opencti.seudominio.com.br +short
 
 ## ⚙️ 1. Instalar o OpenCTI com Docker
 
+### Pré-requisitos
+```bash
+sudo apt install -y curl git uuid-runtime nano unzip lsb-release apt-transport-https ca-certificates
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-compose -y
+```
+
 ### Clonar o repositório
 
 ```bash
