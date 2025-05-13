@@ -10,7 +10,8 @@
 
 ---
 
-## ✅ 2.1 Atualizar Sistema e Instalar Dependências
+
+## ✅ 1. Atualizar Sistema e Instalar Dependências
 
 ```bash
 apt update && apt upgrade -y
@@ -19,7 +20,7 @@ apt install -y apt-transport-https wget curl gnupg2 lsb-release
 
 ---
 
-## ✅ 2.2 Adicionar Repositório Elastic Stack
+## ✅ 2. Adicionar Repositório Elastic Stack
 
 ```bash
 curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg
@@ -31,7 +32,7 @@ apt update
 
 ---
 
-## ✅ 2.3 Instalar Filebeat
+## ✅ 3. Instalar Filebeat
 
 ```bash
 apt install -y filebeat
@@ -43,7 +44,7 @@ systemctl status filebeat
 
 ---
 
-## ✅ 2.4 Instalar Logstash
+## ✅ 4. Instalar Logstash
 
 ```bash
 apt install -y default-jre logstash
@@ -55,7 +56,7 @@ systemctl status logstash
 
 ---
 
-## ✅ 2.5 Configurar Filebeat para Enviar para Logstash
+## ✅ 5. Configurar Filebeat para Enviar para Logstash
 Edite o arquivo `/etc/filebeat/filebeat.yml` e comente a saída padrão para Elasticsearch, habilitando apenas a saída para Logstash:
 
 ```yaml
@@ -74,7 +75,7 @@ systemctl restart filebeat
 
 ---
 
-## ✅ 2.6 Checklist Pós-Instalação
+## ✅ 6. Checklist Pós-Instalação
 
 | Item Verificado                              | Status |
 | -------------------------------------------- | ------ |
