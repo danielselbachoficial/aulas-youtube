@@ -35,7 +35,7 @@ dig opencti.seudominio.com.br +short
 
 ---
 
-## ⚙️ 2. Instalar o OpenCTI com Docker
+## ⚙️ 1. Instalar o OpenCTI com Docker
 
 ### Clonar o repositório
 
