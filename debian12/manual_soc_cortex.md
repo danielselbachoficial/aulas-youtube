@@ -1,4 +1,4 @@
-# Manual de Instalação - SOC-Cortex (com HTTPS e Proxy Reverso)
+# Manual de Instalação - SOC-Cortex (com HTTPS e Proxy Reverso) ============= EM TESTE
 
 > **Ferramenta:** Cortex 3.1.7
 > **Sistema Operacional:** Debian 12 Minimalista
