@@ -231,7 +231,7 @@ sudo certbot --nginx -d cortex.seudominio.com
 
 ### Segurança Extra: Headers e Limites
 
-Dentro do `server` do Nginx:
+Dentro do `server` do Nginx no arquivo "/etc/nginx/sites-available/cortex".
 
 ```nginx
 add_header X-Content-Type-Options nosniff;
