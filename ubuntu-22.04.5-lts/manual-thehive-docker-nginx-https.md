@@ -13,6 +13,25 @@ Ao utilizar todo o stack via Docker, você garante isolamento, previsibilidade e
 
 ---
 
+## 🌍 Configurar DNS do Subdomínio
+
+No painel do seu provedor DNS, crie um registro:
+
+```
+Tipo: A
+Nome: opencti
+Valor: IP público do servidor
+```
+
+Valide com:
+
+```bash
+dig opencti.seudominio.com.br +short
+```
+
+---
+
+
 ## 🚀 Instalação do Zero
 
 ### 🔧 1. Atualizar o sistema e instalar dependências básicas
