@@ -80,9 +80,9 @@ systemctl start elasticsearch
 
 ```bash
 mkdir -p /opt/cortex && cd /opt/cortex
-wget https://download.thehive-project.org/cortex-3.1.7-1.zip
-unzip cortex-3.1.7-1.zip
-mv cortex-3.1.7-1 cortex
+wget https://download.thehive-project.org/cortex-3.1.7-1.zip -O cortex.zip
+unzip cortex.zip
+mv cortex-3.1.7-1 package
 adduser --system --no-create-home --group cortex
 chown -R cortex:cortex /opt/cortex
 ```
@@ -96,8 +96,8 @@ openssl rand -hex 32
 Crie:
 
 ```bash
-mkdir -p /opt/cortex/conf
-nano /opt/cortex/conf/application.conf
+mkdir -p /opt/cortex/package/conf
+nano /opt/cortex/package/conf/application.conf
 ```
 
 Exemplo:
@@ -123,10 +123,9 @@ chown -R cortex:cortex /opt/cortex
 ```
 
 ## ✅ 6. Criar `users.conf` com senha criptografada
-Edite:
 
 ```bash
-nano /opt/cortex/conf/users.conf
+nano /opt/cortex/package/conf/users.conf
 ```
 
 Exemplo:
@@ -164,8 +163,8 @@ After=network.target
 User=cortex
 Group=cortex
 Type=simple
-WorkingDirectory=/opt/cortex
-ExecStart=/usr/bin/java -Dconfig.file=/opt/cortex/conf/application.conf -cp "/opt/cortex/lib/*" org.thp.cortex.Cortex
+WorkingDirectory=/opt/cortex/package
+ExecStart=/usr/bin/java -Dconfig.file=/opt/cortex/package/conf/application.conf -cp "/opt/cortex/package/lib/*" play.core.server.ProdServerStart
 Restart=always
 LimitNOFILE=65536
 
@@ -185,7 +184,6 @@ systemctl start cortex
 
 ```bash
 apt install nginx certbot python3-certbot-nginx -y
-certbot --nginx -d cortex.seudominio.com.br
 ```
 
 ```bash
@@ -202,11 +200,22 @@ server {
 }
 
 server {
-    listen 443 ssl;
+    listen 443 ssl http2;
     server_name cortex.seudominio.com.br;
 
     ssl_certificate /etc/letsencrypt/live/cortex.seudominio.com.br/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/cortex.seudominio.com.br/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
 
     location / {
         proxy_pass http://127.0.0.1:9001;
@@ -223,6 +232,7 @@ server {
 ln -s /etc/nginx/sites-available/cortex /etc/nginx/sites-enabled/
 nginx -t
 systemctl restart nginx
+certbot --nginx -d cortex.seudominio.com.br
 ```
 
 ## ✅ 10. Integração com TheHive
@@ -252,15 +262,15 @@ systemctl restart cortex
 
 ```bash
 mkdir -p /opt/backup/cortex
-cp -r /opt/cortex/conf /opt/backup/cortex/
-cp -r /opt/cortex/data /opt/backup/cortex/
-tar -czvf /opt/backup/cortex_backup_$(date +%F).tar.gz /opt/cortex/conf /opt/cortex/data
+cp -r /opt/cortex/package/conf /opt/backup/cortex/
+cp -r /opt/cortex/package/data /opt/backup/cortex/
+tar -czvf /opt/backup/cortex_backup_$(date +%F).tar.gz /opt/backup/cortex/
 ```
 
 Agendar no `crontab -e`:
 
 ```cron
-0 2 * * * tar -czf /opt/backup/cortex_backup_$(date +\%F).tar.gz /opt/cortex/conf /opt/cortex/data
+0 2 * * * tar -czf /opt/backup/cortex_backup_$(date +\%F).tar.gz /opt/cortex/package/conf /opt/cortex/package/data
 ```
 
 ## ✅ Firewall recomendado
