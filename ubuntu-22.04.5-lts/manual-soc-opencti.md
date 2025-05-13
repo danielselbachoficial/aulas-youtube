@@ -170,9 +170,18 @@ sops -e .env > .env.enc
 sops -d .env.enc > .env
 ```
 
+## 🧱 6. Firewall
+```bash 
+sudo apt install ufw -y
+sudo ufw allow OpenSSH
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw enable
+```
+
 ---
 
-## ✅ 6. Acessar o OpenCTI
+## ✅ 7. Acessar o OpenCTI
 
 Acesse sua instância em:
 
