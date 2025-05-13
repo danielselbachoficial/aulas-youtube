@@ -304,6 +304,7 @@ server {
 
 Ative o site:
 ```bash
+sudo rm /etc/nginx/sites-enabled/default
 sudo ln -s /etc/nginx/sites-available/shuffle /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
