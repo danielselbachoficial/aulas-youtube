@@ -307,53 +307,36 @@ sudo crontab -e
 # ✅ Checklist Final – Manual de Instalação do Cortex em Nuvem (Produção)
 
 ## 🔐 Segurança e Certificados
-
-- [x] TLS via Let's Encrypt para Cortex (`keystore.p12`)
-- [x] Truststore para conexões seguras (`truststore.jks`)
-- [x] Senhas seguras, geradas com `openssl rand -hex 32`
-- [x] Certificados protegidos (`chmod 600`, `chown cortex`)
-- [x] Agendamento de renovação automática com `certbot renew`
-
-> 💡 **Dica extra:** Documentar o uso de `acme.sh` como alternativa leve ao Certbot.
-
----
+- TLS via Let's Encrypt para Cortex (keystore.p12)
+- Truststore para conexões seguras (truststore.jks)
+- Senhas seguras, geradas com: openssl rand -hex 32
+- Certificados protegidos (chmod 600, chown cortex)
+- Renovação automática agendada com: certbot renew
+💡 Dica extra: Documentar o uso de acme.sh como alternativa leve ao Certbot.
 
 ## 🔧 Serviço e Sistema
-
-- [x] `systemd` configurado com Java Keystore + reinício automático
-- [x] `ulimit` ajustado (`LimitNOFILE=65536`)
-- [x] Execução com usuário dedicado (`cortex`)
-- [x] Variáveis de ambiente seguras no `systemd` ou `.env`
-
-> 💡 **Dica extra:** Use `/etc/default/cortex` como local para variáveis privadas.
-
----
+- systemd configurado com Java Keystore + reinício automático
+- ulimit ajustado (LimitNOFILE=65536)
+- Execução com usuário dedicado (cortex)
+- Variáveis de ambiente seguras via systemd ou .env
+💡 Dica extra: Use /etc/default/cortex como local seguro para variáveis sensíveis.
 
 ## 🧱 Infraestrutura de Rede
-
-- [x] Portas controladas via `iptables` ou `nftables`
-- [x] Serviço em rede privada ou atrás de WAF/reverso
-- [x] Sem binds em `0.0.0.0` onde não for necessário
-- [x] Interface web exposta **somente via HTTPS**
-
-> 💡 **Dica extra:** Reforçar com Fail2ban ou WAF (nginx + ModSecurity) se exposto publicamente.
-
----
+- Portas controladas com iptables ou nftables
+- Serviço em rede privada ou atrás de WAF / proxy reverso
+- Sem binds em 0.0.0.0, exceto onde estritamente necessário
+- Interface web acessível apenas via HTTPS
+💡 Dica extra: Reforçar com Fail2ban ou WAF (nginx + ModSecurity) se exposto publicamente.
 
 ## 📁 Backup e Monitoramento
-
-- [x] Backup automático dos diretórios `conf/` e `data/`
-- [x] Agendamento via `cron`
-- [x] Log centralizado (rsyslog, ELK ou SIEM)
-- [x] Monitoramento da porta/serviço (`systemd`, Prometheus node exporter, etc)
-
-> 💡 **Dica extra:** Exportar métricas com Prometheus ou journald + Loki/Grafana.
-
----
+- Backup automático dos diretórios conf/ e data/
+- Agendamento de backup via cron
+- Logs centralizados (rsyslog, ELK, Graylog ou SIEM)
+- Monitoramento de portas/serviços (systemd, Prometheus node exporter)
+💡 Dica extra: Exportar métricas com Prometheus, journald + Loki/Grafana.
 
 ## 📜 Documentação do Manual
-
-- [x] Explicação por seção (instalação, segurança, backup)
-- [x] Comentários nas configurações
-- [x] Comandos organizados e testáveis
-- [x] Estrutura clara para vídeo/aula
+- Explicação clara por seção (instalação, segurança, backup)
+- Comentários úteis nas configurações
+- Comandos organizados, testados e reprodutíveis
+- Estrutura didática para vídeo, treinamento ou auditoria
