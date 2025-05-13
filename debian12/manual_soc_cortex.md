@@ -210,6 +210,29 @@ server {
         proxy_ssl_verify off;
     }
 }
+
+server {
+    listen 443 ssl;
+    server_name cortex.seudominio.com;
+
+    ssl_certificate /etc/letsencrypt/live/cortex.seudominio.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/cortex.seudominio.com/privkey.pem;
+
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+
+    limit_req_zone $binary_remote_addr zone=mylimit:10m rate=10r/s;
+
+    location / {
+        limit_req zone=mylimit burst=20;
+        proxy_pass https://localhost:9001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_ssl_verify off;
+    }
+}
 ```
 
 Ativar o site e reiniciar Nginx:
