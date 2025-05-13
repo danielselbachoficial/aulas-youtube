@@ -279,6 +279,8 @@ sudo crontab -e
 ```
 
 
+
+
 # ✅ Checklist Final – Manual de Instalação do Cortex em Nuvem (Produção)
 
 ## 🔐 Segurança e Certificados
