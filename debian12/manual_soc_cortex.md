@@ -54,7 +54,7 @@ cluster.name: cortex
 node.name: node-1
 path.data: /var/lib/elasticsearch
 path.logs: /var/log/elasticsearch
-network.host: _eth0_
+network.host: lo
 http.port: 9200
 discovery.type: single-node
 
