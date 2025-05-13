@@ -9,15 +9,15 @@
 ## 📦 Requisitos
 
 - Servidor com IP público
-- Nome de domínio válido (ex: `efesiostech.com`)
-- Subdomínio apontando para o IP público (ex: `opencti.efesiostech.com`)
+- Nome de domínio válido (ex: `seudominio.com.br`)
+- Subdomínio apontando para o IP público (ex: `opencti.seudominio.com.br`)
 - Docker + Docker Compose
 - NGINX
 - Certbot (Let's Encrypt)
 
 ---
 
-## 🌍 1. Configurar DNS do Subdomínio
+## 🌍 Configurar DNS do Subdomínio
 
 No painel do seu provedor DNS, crie um registro:
 
@@ -64,7 +64,7 @@ docker-compose -f docker-compose.yml up -d
 
 ---
 
-## 🌐 3. Configurar NGINX como Proxy Reverso
+## 🌐 2. Configurar NGINX como Proxy Reverso
 
 ### Instalar NGINX e Certbot
 
@@ -105,7 +105,7 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
-## 🔐 4. Gerar Certificado HTTPS com Let's Encrypt
+## 🔐 3. Gerar Certificado HTTPS com Let's Encrypt
 
 ```bash
 sudo certbot --nginx -d opencti.seudominio.com.br
@@ -115,7 +115,7 @@ sudo certbot --nginx -d opencti.seudominio.com.br
 
 ---
 
-## 🔁 5. Hook de Renovação Automática
+## 🔁 4. Hook de Renovação Automática
 
 Crie o hook:
 
@@ -140,7 +140,7 @@ sudo certbot renew --dry-run
 
 ---
 
-## 🔐 6. Segurança e Backup
+## 🔐 5. Segurança e Backup
 
 ### Backup de volumes
 
@@ -164,7 +164,7 @@ sops -d .env.enc > .env
 
 ---
 
-## ✅ Finalização
+## ✅ 6. Acessar o OpenCTI
 
 Acesse sua instância em:
 
