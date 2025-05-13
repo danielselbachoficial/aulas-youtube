@@ -4,7 +4,7 @@
 > **Ambiente:** Produção com domínio público e certificado SSL Let's Encrypt
 > **Autor:** Daniel Selbach Figueiró – Efésios Tech
 
-## 1. Pré-Requisitos
+## Pré-Requisitos
 
 - Servidor com Debian 12 minimal
 - Acesso root
@@ -13,7 +13,7 @@
 
 ---
 
-## 2. Instalação de Dependências
+## 1. Instalação de Dependências
 
 ```bash
 sudo apt update
@@ -22,7 +22,7 @@ sudo apt install -y wget gnupg apt-transport-https git ca-certificates ca-certif
 
 ---
 
-## 3. Instalar Java 11 (Amazon Corretto)
+## 2. Instalar Java 11 (Amazon Corretto)
 
 ```bash
 wget -qO- https://apt.corretto.aws/corretto.key | sudo gpg --dearmor -o /usr/share/keyrings/corretto.gpg
@@ -33,7 +33,7 @@ sudo apt install -y java-11-amazon-corretto-jdk
 
 ---
 
-## 4. Instalar Elasticsearch 7.x com Segurança
+## 3. Instalar Elasticsearch 7.x com Segurança
 
 ```bash
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
@@ -64,7 +64,7 @@ xpack.security.http.ssl.certificate_authorities: ["/etc/elasticsearch/certs/ca.c
 
 ---
 
-## 5. Instalar o Cortex
+## 4. Instalar o Cortex
 
 ```bash
 mkdir -p /opt/cortex && cd /opt/cortex
@@ -76,7 +76,7 @@ chown -R cortex:cortex /opt/cortex
 
 ---
 
-## 6. Gerar Certificados com Let's Encrypt
+## 5. Gerar Certificados com Let's Encrypt
 
 ```bash
 apt install -y certbot
@@ -92,7 +92,7 @@ keytool -import -alias letsencrypt -file /etc/letsencrypt/live/cortex.seudominio
 
 ---
 
-## 7. Configuração do Cortex (HTTPS)
+## 6. Configuração do Cortex (HTTPS)
 
 Arquivo: `/opt/cortex/conf/application.conf`
 
@@ -113,7 +113,7 @@ search {
 
 ---
 
-## 8. Criar `users.conf`
+## 7. Criar `users.conf`
 
 ```hocon
 cortexAdmin = {
@@ -125,7 +125,7 @@ cortexAdmin = {
 
 ---
 
-## 9. Ativar Serviço do Cortex
+## 8. Ativar Serviço do Cortex
 
 Arquivo: `/etc/systemd/system/cortex.service`
 
@@ -154,17 +154,17 @@ systemctl start cortex
 
 ---
 
-## 10. Segurança de Porta com iptables
+## 9. Segurança de Porta com iptables (caso use iptables)
 
 ```bash
-iptables -A INPUT -p tcp --dport 9001 ! -s 10.0.0.0/8 -j DROP
-iptables -A INPUT -p tcp --dport 9001 -s 10.0.0.0/8 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9001 ! -s NETWORK/SUBNET -j DROP
+iptables -A INPUT -p tcp --dport 9001 -s NETWORK/SUBNET -j ACCEPT
 netfilter-persistent save
 ```
 
 ---
 
-## 11. Backup Diário
+## 10. Backup Diário
 
 ```bash
 mkdir -p /opt/backup/cortex
@@ -183,22 +183,100 @@ crontab -e
 
 ---
 
-## 12. Renovação do Let's Encrypt
+## 11. Usando Nginx como Proxy Reverso com HTTPS (Let's Encrypt)
+
+### Instalar Nginx + Certbot plugin
 
 ```bash
-crontab -e
+sudo apt install -y nginx python3-certbot-nginx
+```
+
+---
+
+### Configurar Virtual Host para o Cortex
+
+Arquivo: `/etc/nginx/sites-available/cortex`
+
+```nginx
+server {
+    listen 80;
+    server_name cortex.seudominio.com;
+
+    location / {
+        proxy_pass https://localhost:9001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_ssl_verify off;
+    }
+}
+```
+
+Ativar o site e reiniciar Nginx:
+
+```bash
+ln -s /etc/nginx/sites-available/cortex /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+```
+
+---
+
+### Obter Certificado HTTPS com Let's Encrypt
+
+```bash
+sudo certbot --nginx -d cortex.seudominio.com
+```
+
+---
+
+### Segurança Extra: Headers e Limites
+
+Dentro do `server` do Nginx:
+
+```nginx
+add_header X-Content-Type-Options nosniff;
+add_header X-Frame-Options DENY;
+add_header X-XSS-Protection "1; mode=block";
+
+limit_req_zone $binary_remote_addr zone=mylimit:10m rate=10r/s;
+
+location / {
+    limit_req zone=mylimit burst=20;
+    proxy_pass https://localhost:9001;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_ssl_verify off;
+}
+```
+
+---
+
+### Redirecionar HTTP para HTTPS
+
+Arquivo adicional para redirecionamento:
+
+```nginx
+server {
+    listen 80;
+    server_name cortex.seudominio.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+---
+
+### Renovação automática com Certbot
+
+Já gerenciada pelo Certbot (`/etc/cron.d/certbot`). Para garantir, adicione:
+
+```bash
+sudo crontab -e
 ```
 
 ```cron
-0 3 * * * certbot renew --quiet --post-hook "systemctl restart cortex"
+0 3 * * * certbot renew --quiet --nginx --post-hook "systemctl reload nginx"
 ```
-
-
-
-
-
-
-
 
 
 # ✅ Checklist Final – Manual de Instalação do Cortex em Nuvem (Produção)
