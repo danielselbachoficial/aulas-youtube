@@ -19,7 +19,7 @@ No painel do seu provedor DNS, crie um registro:
 
 ```
 Tipo: A
-Nome: opencti
+Nome: thehive
 Valor: IP público do servidor
 ```
 
