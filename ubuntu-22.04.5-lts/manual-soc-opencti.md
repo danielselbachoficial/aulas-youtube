@@ -121,7 +121,18 @@ Conteúdo:
 ```nginx
 server {
     listen 80;
-    server_name opencti.seudominio.com.br;
+    server_name opencti.efesiostech.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name opencti.efesiostech.com;
+
+    ssl_certificate /etc/letsencrypt/live/opencti.efesiostech.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/opencti.efesiostech.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     location / {
         proxy_pass http://localhost:8080;
@@ -131,9 +142,6 @@ server {
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
     }
-
-    # Redirecionamento HTTP → HTTPS (certbot irá automatizar)
-}
 ```
 
 Ativar:
