@@ -110,7 +110,28 @@ docker-compose -f docker-compose.yml up -d
 sudo apt update && sudo apt install nginx certbot python3-certbot-nginx -y
 ```
 
-### 2.2 Criar configuração do NGINX
+### 2.2 Gerar arquivos TLS recomendados
+
+```bash
+sudo mkdir -p /etc/letsencrypt
+
+# Baixar configurações seguras de SSL recomendadas pelo Certbot
+sudo wget https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf -O /etc/letsencrypt/options-ssl-nginx.conf
+
+# Gerar parâmetros Diffie-Hellman (leva alguns minutos)
+sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
+
+# Verificar o arquivo gerado
+ls -lh /etc/letsencrypt/ssl-dhparams.pem
+
+# Testar a configuração do NGINX
+sudo nginx -t
+
+# Aplicar as alterações
+sudo systemctl reload nginx
+```
+
+### 2.3 Criar configuração do NGINX
 
 ```bash
 sudo nano /etc/nginx/sites-available/opencti
@@ -119,12 +140,6 @@ sudo nano /etc/nginx/sites-available/opencti
 Conteúdo:
 
 ```nginx
-server {
-    listen 80;
-    server_name opencti.efesiostech.com;
-    return 301 https://$host$request_uri;
-}
-
 server {
     listen 443 ssl;
     server_name opencti.seudominio.com.br;
@@ -151,7 +166,7 @@ sudo ln -s /etc/nginx/sites-available/opencti /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-### 2.3 Gerar certificado com HTTPS
+### 2.4 Gerar certificado com HTTPS
 
 ```bash
 sudo certbot --nginx -d opencti.seudominio.com.br
