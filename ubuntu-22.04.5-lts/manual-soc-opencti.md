@@ -102,6 +102,23 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 }
+
+# 🔐 BLOCO OPCIONAL – Configuração HTTPS manual
+# Use esse bloco apenas se quiser desativar o modo automático do certbot
+# ou migrar para um proxy estático com certificados fixos do Let's Encrypt
+# server {
+#   listen 443 ssl;
+#   server_name opencti.efesiostech.com;
+#
+#   ssl_certificate /etc/letsencrypt/live/opencti.efesiostech.com/fullchain.pem;
+#   ssl_certificate_key /etc/letsencrypt/live/opencti.efesiostech.com/privkey.pem;
+#
+#   location / {
+#       proxy_pass http://localhost:8080;  # ou a porta do seu backend OpenCTI
+#       proxy_set_header Host $host;
+#       proxy_set_header X-Real-IP $remote_addr;
+#    }
+# }
 ```
 
 Ativar e testar:
@@ -120,6 +137,8 @@ sudo certbot --nginx -d opencti.seudominio.com.br
 ```
 
 > O Certbot irá configurar o redirecionamento de HTTP para HTTPS automaticamente.
+
+### 
 
 ---
 
