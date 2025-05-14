@@ -108,10 +108,10 @@ server {
 # ou migrar para um proxy estático com certificados fixos do Let's Encrypt
 # server {
 #   listen 443 ssl;
-#   server_name opencti.efesiostech.com;
+#   server_name opencti.seudominio.com.br;
 #
-#   ssl_certificate /etc/letsencrypt/live/opencti.efesiostech.com/fullchain.pem;
-#   ssl_certificate_key /etc/letsencrypt/live/opencti.efesiostech.com/privkey.pem;
+#   ssl_certificate /etc/letsencrypt/live/opencti.seudominio.com.br/fullchain.pem;
+#   ssl_certificate_key /etc/letsencrypt/live/opencti.seudominio.com.br/privkey.pem;
 #
 #   location / {
 #       proxy_pass http://localhost:8080;  # ou a porta do seu backend OpenCTI
