@@ -58,10 +58,286 @@ cd opencti
 uuidgen
 ```
 
-### Editar o `.env`
+### Renomear o arquivo ".env.sample":
+mv .env.sample .env
 
-```env
-OPENCTI_ADMIN_TOKEN=coloque_seu_uuid_gerado
+### Remova o conteúdo do arquivo ".env" e cole o conteúdo abaixo:
+
+```bash
+# OpenCTI
+OPENCTI_BASE_URL=http://localhost:8080
+OPENCTI_ADMIN_EMAIL=admin@seudominio.com.br
+OPENCTI_ADMIN_PASSWORD=admin123
+OPENCTI_ADMIN_TOKEN=<UUID>
+OPENCTI_HEALTHCHECK_ACCESS_KEY=chave-health-check-secreta
+
+# Elasticsearch
+ELASTIC_MEMORY_SIZE=2g
+
+# MinIO
+MINIO_ROOT_USER=opencti
+MINIO_ROOT_PASSWORD=admin123
+
+# RabbitMQ
+RABBITMQ_DEFAULT_USER=opencti
+RABBITMQ_DEFAULT_PASS=admin123
+
+# SMTP (se não tiver, pode deixar assim)
+SMTP_HOSTNAME=localhost
+
+# Connectors UUIDs (gere com uuidgen)
+CONNECTOR_EXPORT_FILE_STIX_ID=uuid1
+CONNECTOR_EXPORT_FILE_CSV_ID=uuid2
+CONNECTOR_EXPORT_FILE_TXT_ID=uuid3
+CONNECTOR_IMPORT_FILE_STIX_ID=uuid4
+CONNECTOR_IMPORT_DOCUMENT_ID=uuid5
+CONNECTOR_ANALYSIS_ID=uuid6
+
+```
+
+### Remova o conteúdo do arquivo "docker-compose.yml" e cole o conteúdo abaixo:
+
+```bash
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7.4.3
+    restart: always
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.ml.enabled=false
+      - xpack.security.enabled=false
+      - thread_pool.search.queue_size=5000
+      - logger.org.elasticsearch.discovery=ERROR
+      - ES_JAVA_OPTS=-Xms${ELASTIC_MEMORY_SIZE} -Xmx${ELASTIC_MEMORY_SIZE}
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 50
+
+  minio:
+    image: minio/minio:RELEASE.2024-05-28T17-19-04Z
+    restart: always
+    command: server /data
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - s3data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_NODENAME: rabbit01@localhost
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - amqpdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  opencti:
+    image: opencti/platform:6.6.11
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_OPTIONS: --max-old-space-size=8096
+      APP__PORT: 8080
+      APP__BASE_URL: ${OPENCTI_BASE_URL}
+      APP__ADMIN__EMAIL: ${OPENCTI_ADMIN_EMAIL}
+      APP__ADMIN__PASSWORD: ${OPENCTI_ADMIN_PASSWORD}
+      APP__ADMIN__TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      APP__APP_LOGS__LOGS_LEVEL: error
+      REDIS__HOSTNAME: redis
+      REDIS__PORT: 6379
+      ELASTICSEARCH__URL: http://elasticsearch:9200
+      ELASTICSEARCH__NUMBER_OF_REPLICAS: 0
+      MINIO__ENDPOINT: minio
+      MINIO__PORT: 9000
+      MINIO__USE_SSL: false
+      MINIO__ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO__SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      RABBITMQ__HOSTNAME: rabbitmq
+      RABBITMQ__PORT: 5672
+      RABBITMQ__PORT_MANAGEMENT: 15672
+      RABBITMQ__MANAGEMENT_SSL: false
+      RABBITMQ__USERNAME: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ__PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+      SMTP__HOSTNAME: ${SMTP_HOSTNAME}
+      SMTP__PORT: 25
+      PROVIDERS__LOCAL__STRATEGY: LocalStrategy
+      APP__HEALTH_ACCESS_KEY: ${OPENCTI_HEALTHCHECK_ACCESS_KEY}
+    depends_on:
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://opencti:8080/health?health_access_key=${OPENCTI_HEALTHCHECK_ACCESS_KEY}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  worker:
+    image: opencti/worker:6.6.11
+    restart: always
+    environment:
+      OPENCTI_URL: http://opencti:8080
+      OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      WORKER_LOG_LEVEL: info
+    depends_on:
+      opencti:
+        condition: service_healthy
+    deploy:
+      mode: replicated
+      replicas: 3
+
+  connector-export-file-stix:
+    image: opencti/connector-export-file-stix:6.6.11
+    restart: always
+    environment:
+      OPENCTI_URL: http://opencti:8080
+      OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_STIX_ID}
+      CONNECTOR_TYPE: INTERNAL_EXPORT_FILE
+      CONNECTOR_NAME: ExportFileStix2
+      CONNECTOR_SCOPE: application/json
+      CONNECTOR_LOG_LEVEL: info
+    depends_on:
+      opencti:
+        condition: service_healthy
+
+  connector-export-file-csv:
+    image: opencti/connector-export-file-csv:6.6.11
+    restart: always
+    environment:
+      OPENCTI_URL: http://opencti:8080
+      OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_CSV_ID}
+      CONNECTOR_TYPE: INTERNAL_EXPORT_FILE
+      CONNECTOR_NAME: ExportFileCsv
+      CONNECTOR_SCOPE: text/csv
+      CONNECTOR_LOG_LEVEL: info
+    depends_on:
+      opencti:
+        condition: service_healthy
+
+  connector-export-file-txt:
+    image: opencti/connector-export-file-txt:6.6.11
+    restart: always
+    environment:
+      OPENCTI_URL: http://opencti:8080
+      OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_TXT_ID}
+      CONNECTOR_TYPE: INTERNAL_EXPORT_FILE
+      CONNECTOR_NAME: ExportFileTxt
+      CONNECTOR_SCOPE: text/plain
+      CONNECTOR_LOG_LEVEL: info
+    depends_on:
+      opencti:
+        condition: service_healthy
+
+  connector-import-file-stix:
+    image: opencti/connector-import-file-stix:6.6.11
+    restart: always
+    environment:
+      OPENCTI_URL: http://opencti:8080
+      OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      CONNECTOR_ID: ${CONNECTOR_IMPORT_FILE_STIX_ID}
+      CONNECTOR_TYPE: INTERNAL_IMPORT_FILE
+      CONNECTOR_NAME: ImportFileStix
+      CONNECTOR_VALIDATE_BEFORE_IMPORT: true
+      CONNECTOR_SCOPE: application/json,text/xml
+      CONNECTOR_AUTO: true
+      CONNECTOR_LOG_LEVEL: info
+    depends_on:
+      opencti:
+        condition: service_healthy
+
+  connector-import-document:
+    image: opencti/connector-import-document:6.6.11
+    restart: always
+    environment:
+      OPENCTI_URL: http://opencti:8080
+      OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      CONNECTOR_ID: ${CONNECTOR_IMPORT_DOCUMENT_ID}
+      CONNECTOR_TYPE: INTERNAL_IMPORT_FILE
+      CONNECTOR_NAME: ImportDocument
+      CONNECTOR_VALIDATE_BEFORE_IMPORT: true
+      CONNECTOR_SCOPE: application/pdf,text/plain,text/html
+      CONNECTOR_AUTO: true
+      CONNECTOR_ONLY_CONTEXTUAL: false
+      CONNECTOR_CONFIDENCE_LEVEL: 15
+      CONNECTOR_LOG_LEVEL: info
+      IMPORT_DOCUMENT_CREATE_INDICATOR: true
+    depends_on:
+      opencti:
+        condition: service_healthy
+
+  connector-analysis:
+    image: opencti/connector-import-document:6.6.11
+    restart: always
+    environment:
+      OPENCTI_URL: http://opencti:8080
+      OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      CONNECTOR_ID: ${CONNECTOR_ANALYSIS_ID}
+      CONNECTOR_TYPE: INTERNAL_ANALYSIS
+      CONNECTOR_NAME: ImportDocumentAnalysis
+      CONNECTOR_VALIDATE_BEFORE_IMPORT: false
+      CONNECTOR_SCOPE: application/pdf,text/plain,text/html
+      CONNECTOR_AUTO: true
+      CONNECTOR_ONLY_CONTEXTUAL: false
+      CONNECTOR_CONFIDENCE_LEVEL: 15
+      CONNECTOR_LOG_LEVEL: info
+    depends_on:
+      opencti:
+        condition: service_healthy
+
+volumes:
+  esdata:
+  s3data:
+  redisdata:
+  amqpdata:
+
 ```
 
 ### Subir os serviços
