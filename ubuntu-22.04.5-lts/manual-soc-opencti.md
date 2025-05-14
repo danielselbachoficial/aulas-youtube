@@ -224,7 +224,3 @@ Credenciais iniciais (ajustadas no .env):
 * Recomendado para ambientes de SOC, Threat Intel e resposta a incidentes
 * Use autenticação multifator no OpenCTI e SMTP externo se possível
 * Para alta disponibilidade: balanceador, snapshots e banco externo
-
----
-
-**Efésios Tech — Cibersegurança & Infraestrutura com Excelência.**
