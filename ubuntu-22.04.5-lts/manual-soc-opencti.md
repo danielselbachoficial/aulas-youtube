@@ -27,6 +27,7 @@ No painel do seu provedor DNS, crie um registro:
 Valide com:
 
 ```bash
+sudo apt install dnsutils -y  
 dig opencti.seudominio.com.br +short
 ```
 
