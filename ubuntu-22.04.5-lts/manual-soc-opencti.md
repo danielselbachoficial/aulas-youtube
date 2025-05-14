@@ -121,7 +121,7 @@ Conteúdo:
 ```nginx
 server {
     listen 80;
-    server_name opencti.seudominio.com.br;
+    server_name opencti.efesiostech.com;
     return 301 https://$host$request_uri;
 }
 
