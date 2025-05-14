@@ -55,7 +55,10 @@ cd opencti
 
 ```bash
 mv .env.sample .env
-nano .env
+
+uuidgen
+
+nano .env (Pode usar o editor de texto vim)
 ```
 
 Cole o seguinte conteúdo (ajuste os valores):
