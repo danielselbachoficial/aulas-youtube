@@ -121,16 +121,16 @@ Conteúdo:
 ```nginx
 server {
     listen 80;
-    server_name opencti.efesiostech.com;
+    server_name opencti.seudominio.com.br;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl;
-    server_name opencti.efesiostech.com;
+    server_name opencti.seudominio.com.br;
 
-    ssl_certificate /etc/letsencrypt/live/opencti.efesiostech.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/opencti.efesiostech.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/opencti.seudominio.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/opencti.seudominio.com.br/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
