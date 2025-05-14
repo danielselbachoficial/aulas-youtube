@@ -194,9 +194,6 @@ Adicione ao bloco HTTPS no NGINX:
     add_header X-XSS-Protection "1; mode=block";
     add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
     add_header Referrer-Policy no-referrer;
-}
-
-}
 ```
 
 ### 4.2 Firewall (UFW)
