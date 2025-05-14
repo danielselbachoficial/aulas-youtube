@@ -178,11 +178,17 @@ sudo certbot renew --dry-run
 Adicione ao bloco HTTPS no NGINX:
 
 ```nginx
-add_header X-Frame-Options DENY;
-add_header X-Content-Type-Options nosniff;
-add_header X-XSS-Protection "1; mode=block";
-add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
-add_header Referrer-Policy no-referrer;
+    }
+
+    # Cabeçalhos de proteção
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
+    add_header Referrer-Policy no-referrer;
+}
+
+}
 ```
 
 ### 4.2 Firewall (UFW)
