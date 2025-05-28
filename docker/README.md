@@ -5,7 +5,7 @@ Me chamo Daniel Selbach, sou empreendedor, Mentor de Fortinet na Six Core, YouTu
 Neste repositório você encontrará os meus scripts criados para instalar o docker-ce, zabbix7, entre outros...
 
 Daniel Selbach<br>
-Instagram Daniel Selbach: https://www.instagram.com/danielselbachredes/<br>
-YouTube Daniel Selbach: https://www.youtube.com/@danielselbachredes<br>
-Linkedin Daniel Selbach: https://www.linkedin.com/in/danielselbachredes/<br>
-Github Daniel Selbach: https://github.com/danielselbachredes<br>
+Instagram Daniel Selbach: https://www.instagram.com/danielselbach.com.br/<br>
+YouTube Daniel Selbach: https://www.youtube.com/@danielselbachoficial<br>
+Linkedin Daniel Selbach: https://www.linkedin.com/in/danielselbachoficial/<br>
+Github Daniel Selbach: https://github.com/danielselbachoficial<br>
