@@ -17,7 +17,10 @@ Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (clo
 | Memória RAM         | 8 GB        |
 | Armazenamento Disco | 100 GB      |
 
-🎯 **Observação:** Esses requisitos garantem que o sistema operacional **Debian 12**, o ambiente de containers **Docker**, o **Shuffle SOAR** e seus componentes (incluindo **OpenSearch**) rodem de forma está
+> 🎯 **Observação:** Esses requisitos garantem que o sistema operacional **Debian 12**, o ambiente de containers **Docker**, o **Shuffle SOAR** e seus componentes (incluindo **OpenSearch**) rodem de forma estável e segura, permitindo o gerenciamento eficiente de automações, orquestrações e análises de segurança.  
+>
+> ⚠️ **Nota:** para ambientes de alta carga ou múltiplos workflows simultâneos, considere aumentar CPU e memória, além de utilizar discos SSD para melhor desempenho.
+
 
 
 ## 🌍 Configurar DNS do Subdomínio
