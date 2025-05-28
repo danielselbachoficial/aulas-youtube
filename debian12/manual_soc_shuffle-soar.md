@@ -21,7 +21,7 @@ Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (clo
 
 ⚠️ **Nota:** para ambientes de alta carga ou múltiplos workflows simultâneos, considere aumentar CPU e memória, além de utilizar discos SSD para melhor desempenho.
 
-
+---
 
 ## 🌍 Configurar DNS do Subdomínio
 
