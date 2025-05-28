@@ -12,7 +12,7 @@
 
 ## ✅ Requisitos Mínimos da VM
 
-Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (cloud)**, recomenda-se a seguinte configuração mínima da VM:
+Para a implantação em **nuvem (cloud)**, recomenda-se a seguinte configuração mínima da VM:
 
 | Recurso             | Recomendado |
 | ------------------- | ----------: |
