@@ -10,6 +10,19 @@
 
 ---
 
+## ✅ Requisitos Mínimos da VM
+
+Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (cloud)**, recomenda-se a seguinte configuração mínima da VM:
+
+| Recurso             | Recomendado |
+| ------------------- | ----------: |
+| vCPU                | 4           |
+| Memória RAM         | 8 GB        |
+| Armazenamento Disco | 100 GB      |
+
+🎯 **Observação:** Esses requisitos garantem que o sistema operacional **Debian 12** e os componentes do **Wazuh Stack** (Indexer, Manager e Dashboard) rodem de forma estável e eficiente, evitando gargalos, travamentos e problemas de desempenho durante o processamento e visualização de logs.
+
+
 ## 🌍 Configurar DNS do Subdomínio
 
 No painel do seu provedor DNS, crie um registro:
