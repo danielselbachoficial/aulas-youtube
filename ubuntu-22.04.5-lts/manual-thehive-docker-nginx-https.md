@@ -13,6 +13,23 @@ Ao utilizar todo o stack via Docker, você garante isolamento, previsibilidade e
 
 ---
 
+## ✅ Requisitos Mínimos da VM
+
+Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (cloud)**, recomenda-se a seguinte configuração mínima da VM:
+
+| Recurso             | Recomendado |
+| ------------------- | ----------: |
+| vCPU                | 4           |
+| Memória RAM         | 8 GB        |
+| Armazenamento Disco | 100 GB      |
+
+🎯 **Observação:** Esses requisitos garantem que o sistema operacional **Debian 12**, o ambiente de containers **Docker**, o **TheHive** e seus componentes (como **Elasticsearch** e **NGINX**) rodem de forma estável e eficiente, assegurando previsibilidade e segurança em ambientes de produção.  
+
+⚠️ **Nota:** Para ambientes com alto volume de incidentes e muitos usuários simultâneos, considere aumentar CPU, memória e utilizar discos SSD para garantir melhor desempenho.
+
+
+---
+
 ## 🌍 Configurar DNS do Subdomínio
 
 No painel do seu provedor DNS, crie um registro:
