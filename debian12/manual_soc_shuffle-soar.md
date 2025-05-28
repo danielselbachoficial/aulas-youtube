@@ -7,6 +7,19 @@
 
 ---
 
+## ✅ Requisitos Mínimos da VM
+
+Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (cloud)**, recomenda-se a seguinte configuração mínima da VM:
+
+| Recurso             | Recomendado |
+| ------------------- | ----------: |
+| vCPU                | 4           |
+| Memória RAM         | 8 GB        |
+| Armazenamento Disco | 100 GB      |
+
+🎯 **Observação:** Esses requisitos garantem que o sistema operacional **Debian 12**, o ambiente de containers **Docker**, o **Shuffle SOAR** e seus componentes (incluindo **OpenSearch**) rodem de forma está
+
+
 ## 🌍 Configurar DNS do Subdomínio
 
 No painel do seu provedor DNS, crie um registro:
