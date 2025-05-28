@@ -15,6 +15,8 @@
 * NGINX
 * Certbot (Let's Encrypt)
 
+---
+
 ## ✅ Requisitos Mínimos da VM
 
 Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (cloud)**, recomenda-se a seguinte configuração mínima da VM:
