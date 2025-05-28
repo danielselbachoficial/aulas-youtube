@@ -22,7 +22,7 @@ Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (clo
 
 🎯 **Observação:** Esses requisitos garantem que o sistema operacional **Debian 12**, o **Filebeat** e o **Logstash** rodem de maneira estável e eficiente, evitando gargalos e travamentos.
 
-
+---
 
 ## ✅ 1. Atualizar Sistema e Instalar Dependências
 
