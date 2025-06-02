@@ -558,6 +558,8 @@ systemctl daemon-reexec
 systemctl enable wazuh-agent
 systemctl start wazuh-agent
 ```
+⚠️ Importante:
+Quando a configuração é feita manualmente (como acima), NÃO é necessário usar a authentication key. O agente se conecta diretamente ao Manager com base no IP/DNS configurado.
 
 ## Instalação do Wazuh Agent no Windows
 
@@ -580,3 +582,12 @@ msiexec.exe /i wazuh-agent.msi WAZUH_MANAGER="wazuh.seudominio.com.br" WAZUH_REG
 Start-Service WazuhSvc
 Set-Service WazuhSvc -StartupType Automatic
 ```
+⚠️ Observação Importante (Authentication Key):
+Ao instalar o agente no Windows com o parâmetro WAZUH_REGISTRATION_SERVER, você está utilizando o modo de registro automático via authd, portanto:
+
+Sim, será necessário usar a authentication key se o Manager estiver configurado para exigir autenticação.
+
+Essa chave pode ser gerada no Manager com o comando manage_agents -a.
+
+Se o Manager estiver em modo permissivo (não recomendado em produção), a chave pode ser opcional.
+
