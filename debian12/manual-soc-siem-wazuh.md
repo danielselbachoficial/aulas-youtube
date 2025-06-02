@@ -599,8 +599,8 @@ Caso não queira usar o modo de registro automático, você pode configurar o ag
 
 Instale o agente normalmente (sem o parâmetro WAZUH_REGISTRATION_SERVER);
 
-Edite o arquivo C:\Program Files (x86)\ossec-agent\ossec.conf e adicione:
 
+Edite o arquivo C:\Program Files (x86)\ossec-agent\ossec.conf e adicione:
 ```bash
 Copiar
 Editar
