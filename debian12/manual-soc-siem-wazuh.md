@@ -561,7 +561,7 @@ systemctl start wazuh-agent
 ⚠️ Importante:
 Quando a configuração é feita manualmente (como acima), NÃO é necessário usar a authentication key. O agente se conecta diretamente ao Manager com base no IP/DNS configurado.
 
-## Instalação do Wazuh Agent no Windows
+# 🖥️ Instalação do Wazuh Agent no Windows
 
 ## ✅ 1. Baixe o instalador oficial
 Acesse:
@@ -582,18 +582,28 @@ msiexec.exe /i wazuh-agent.msi WAZUH_MANAGER="wazuh.seudominio.com.br" WAZUH_REG
 Start-Service WazuhSvc
 Set-Service WazuhSvc -StartupType Automatic
 ```
-⚠️ Observação Importante (Authentication Key):
+
+⚠️ Observação Importante – Authentication Key
 Ao instalar o agente no Windows com o parâmetro WAZUH_REGISTRATION_SERVER, você está utilizando o modo de registro automático via authd, portanto:
-Sim, será necessário usar a authentication key se o Manager estiver configurado para exigir autenticação.
-Essa chave pode ser gerada no Manager com o comando manage_agents -a.
-Se o Manager estiver em modo permissivo (não recomendado em produção), a chave pode ser opcional.
 
-💡 Caso não queira usar o modo de registro automático, você pode configurar o agente manualmente:
+✅ Será necessário usar uma authentication key se o Manager estiver configurado para exigir autenticação;
 
-1. Instale o agente normalmente (sem o parâmetro `WAZUH_REGISTRATION_SERVER`);
-2. Edite o arquivo `C:\Program Files (x86)\ossec-agent\ossec.conf` e adicione:
+🔐 Essa chave pode ser gerada no Manager com o comando:
+```bash
+/var/ossec/bin/manage_agents
+```
+🚫 Se o Manager estiver em modo permissivo (não recomendado em produção), a chave pode ser opcional.
 
-```xml
+💡 Alternativa: Configuração Manual (sem authd)
+Caso não queira usar o modo de registro automático, você pode configurar o agente manualmente:
+
+Instale o agente normalmente (sem o parâmetro WAZUH_REGISTRATION_SERVER);
+
+Edite o arquivo C:\Program Files (x86)\ossec-agent\ossec.conf e adicione:
+
+```bash
+Copiar
+Editar
 <client>
   <server>
     <address>wazuh.seudominio.com.br</address>
@@ -603,8 +613,9 @@ Se o Manager estiver em modo permissivo (não recomendado em produção), a chav
 </client>
 ```
 
-3. Reinicie o serviço:
+Reinicie o serviço:
 ```bash
 Restart-Service WazuhSvc
 ```
-✅ Esse método dispensa o uso da authentication key, desde que o Manager aceite conexões diretamente (como no Linux).
+
+✅ Esse método dispensa o uso da authentication key, desde que o Manager aceite conexões diretamente (como é feito no Linux).
