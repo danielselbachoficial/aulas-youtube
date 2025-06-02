@@ -53,7 +53,7 @@ apt update && apt upgrade -y
 # ✅ 2. Instalar Pré-requisitos
 
 ```bash
-apt install curl apt-transport-https lsb-release gnupg2 unzip -y
+apt install curl apt-transport-https lsb-release gnupg2 unzip vim -y
 ```
 
 ---
