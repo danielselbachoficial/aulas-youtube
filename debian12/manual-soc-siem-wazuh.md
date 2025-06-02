@@ -602,8 +602,6 @@ Instale o agente normalmente (sem o parâmetro WAZUH_REGISTRATION_SERVER);
 
 Edite o arquivo C:\Program Files (x86)\ossec-agent\ossec.conf e adicione:
 ```bash
-Copiar
-Editar
 <client>
   <server>
     <address>wazuh.seudominio.com.br</address>
