@@ -45,7 +45,7 @@ dig shuffle.seudominio.com.br +short
 ```bash
 sudo apt update && sudo apt install -y \
   docker.io docker-compose nginx curl gnupg2 \
-  certbot python3-certbot-nginx ufw
+  certbot python3-certbot-nginx ufw vim
 ```
 
 ## 📁 2. Baixar e configurar o Shuffle
