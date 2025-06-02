@@ -584,10 +584,27 @@ Set-Service WazuhSvc -StartupType Automatic
 ```
 ⚠️ Observação Importante (Authentication Key):
 Ao instalar o agente no Windows com o parâmetro WAZUH_REGISTRATION_SERVER, você está utilizando o modo de registro automático via authd, portanto:
-
 Sim, será necessário usar a authentication key se o Manager estiver configurado para exigir autenticação.
-
 Essa chave pode ser gerada no Manager com o comando manage_agents -a.
-
 Se o Manager estiver em modo permissivo (não recomendado em produção), a chave pode ser opcional.
 
+💡 Caso não queira usar o modo de registro automático, você pode configurar o agente manualmente:
+
+1. Instale o agente normalmente (sem o parâmetro `WAZUH_REGISTRATION_SERVER`);
+2. Edite o arquivo `C:\Program Files (x86)\ossec-agent\ossec.conf` e adicione:
+
+```xml
+<client>
+  <server>
+    <address>wazuh.seudominio.com.br</address>
+    <port>1514</port>
+    <protocol>tcp</protocol>
+  </server>
+</client>
+```
+
+3. Reinicie o serviço:
+```bash
+Restart-Service WazuhSvc
+```
+✅ Esse método dispensa o uso da authentication key, desde que o Manager aceite conexões diretamente (como no Linux).
