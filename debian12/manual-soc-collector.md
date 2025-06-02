@@ -28,7 +28,7 @@ Para a implantação deste manual em ambiente **on-premises** ou em **nuvem (clo
 
 ```bash
 apt update && apt upgrade -y
-apt install -y apt-transport-https wget curl gnupg2 lsb-release
+apt install -y apt-transport-https wget curl gnupg2 lsb-release vim
 ```
 
 ---
