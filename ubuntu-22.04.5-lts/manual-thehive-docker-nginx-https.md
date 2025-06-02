@@ -55,7 +55,7 @@ dig thehive.seudominio.com.br +short
 
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl unzip ca-certificates gnupg lsb-release software-properties-common
+sudo apt install -y curl unzip ca-certificates gnupg lsb-release software-properties-common vim
 ```
 
 ---
