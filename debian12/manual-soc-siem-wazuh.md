@@ -396,7 +396,7 @@ certbot --nginx -d wazuh.seudominio.com.br
 root@srv132:/usr/share/wazuh-indexer/plugins/opensearch-security/tools# certbot --nginx -d wazuh.seudominio.com.br
 Saving debug log to /var/log/letsencrypt/letsencrypt.log
 Enter email address (used for urgent renewal and security notices)
- (Enter 'c' to cancel): monitoramento@seudominio.com.br
+ (Enter 'c' to cancel): noc@seudominio.com.br
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Please read the Terms of Service at
