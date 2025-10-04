@@ -187,11 +187,9 @@ server {
 # Configuração principal do Proxy Reverso com SSL
 server {
     listen 443 ssl http2;
-    # <-- SUBSTITUA pelo seu subdomínio real
     server_name zabbix.seudominio.com.br;
 
     # --- CORREÇÃO APLICADA ABAIXO ---
-    # Caminhos para os certificados como texto puro.
     # Lembre-se de substituir "seudominio.com.br" pelo seu domínio real.
     ssl_certificate /etc/letsencrypt/live/seudominio.com.br/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/seudominio.com.br/privkey.pem;
@@ -205,7 +203,6 @@ server {
 
     location / {
         # --- CORREÇÃO APLICADA ABAIXO ---
-        # Endereço do proxy_pass como texto puro.
         # Substitua pelo IP interno real da sua aplicação.
         proxy_pass http://172.16.10.10;
         
