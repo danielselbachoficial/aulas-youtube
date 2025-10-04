@@ -7,7 +7,7 @@ Este guia detalha como configurar o Nginx para atuar como um proxy reverso segur
 
 ## Pré-requisitos
 
-1.  **Nginx Instalado:** Utilize o [Guia de Instalação do Nginx](./INSTALACAO_NGINX.md) a partir do repositório oficial.
+1.  **Nginx Instalado:** Utilize o [Guia de Instalação do Nginx](./nginx-installation.md) a partir do repositório oficial.
 2.  **Domínio Público:** Um nome de domínio registrado (ex: `seudominio.com.br`) e um subdomínio (`zabbix.seudominio.com.br`) apontando (via registro DNS do tipo `A`) para o **IP público** do seu firewall/servidor.
 3.  **Aplicação Interna:** Uma aplicação rodando em um IP privado na sua rede interna (ex: Zabbix em `172.16.10.10`).
 4.  **(Para o método Cloudflare)** Uma conta no Cloudflare gerenciando o DNS do seu domínio e um Token de API.
