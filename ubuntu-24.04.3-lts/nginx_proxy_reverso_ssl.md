@@ -179,6 +179,7 @@ Agora, edite novamente seu arquivo de configuração (`/etc/nginx/conf.d/zabbix.
 # Redireciona todo o tráfego HTTP para HTTPS
 server {
     listen 80;
+    # <-- SUBSTITUA pelo seu subdomínio real
     server_name zabbix.seudominio.com.br;
     return 301 https://$host$request_uri;
 }
@@ -186,11 +187,14 @@ server {
 # Configuração principal do Proxy Reverso com SSL
 server {
     listen 443 ssl http2;
+    # <-- SUBSTITUA pelo seu subdomínio real
     server_name zabbix.seudominio.com.br;
 
-    # Caminhos para os certificados gerados pelo Certbot
-    ssl_certificate /etc/letsencrypt/live/[seudominio.com.br/fullchain.pem](https://seudominio.com.br/fullchain.pem);
-    ssl_certificate_key /etc/letsencrypt/live/[seudominio.com.br/privkey.pem](https://seudominio.com.br/privkey.pem);
+    # --- CORREÇÃO APLICADA ABAIXO ---
+    # Caminhos para os certificados como texto puro.
+    # Lembre-se de substituir "seudominio.com.br" pelo seu domínio real.
+    ssl_certificate /etc/letsencrypt/live/seudominio.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/seudominio.com.br/privkey.pem;
     
     # Configurações de SSL recomendadas
     include /etc/letsencrypt/options-ssl-nginx.conf;
@@ -200,7 +204,11 @@ server {
     error_log /var/log/nginx/zabbix.error.log;
 
     location / {
-        proxy_pass [http://172.16.10.10](http://172.16.10.10);
+        # --- CORREÇÃO APLICADA ABAIXO ---
+        # Endereço do proxy_pass como texto puro.
+        # Substitua pelo IP interno real da sua aplicação.
+        proxy_pass http://172.16.10.10;
+        
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
