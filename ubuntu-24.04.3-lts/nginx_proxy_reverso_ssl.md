@@ -7,7 +7,7 @@ Este guia detalha como configurar o Nginx para atuar como um proxy reverso segur
 
 ## Pré-requisitos
 
-1.  **Nginx Instalado:** Utilize o [guia de instalação do Nginx a partir do repositório oficial](./nginx-installation.md).
+1.  **Nginx Instalado:** Utilize o [Guia de Instalação do Nginx](./INSTALACAO_NGINX.md) a partir do repositório oficial.
 2.  **Domínio Público:** Um nome de domínio registrado (ex: `seudominio.com.br`) e um subdomínio (`zabbix.seudominio.com.br`) apontando (via registro DNS do tipo `A`) para o **IP público** do seu firewall/servidor.
 3.  **Aplicação Interna:** Uma aplicação rodando em um IP privado na sua rede interna (ex: Zabbix em `172.16.10.10`).
 4.  **(Para o método Cloudflare)** Uma conta no Cloudflare gerenciando o DNS do seu domínio e um Token de API.
@@ -31,6 +31,8 @@ sudo nano /etc/nginx/conf.d/zabbix.seudominio.com.br.conf
 
 Cole o seguinte conteúdo no arquivo. Ele instrui o Nginx a encaminhar todo o tráfego para sua aplicação interna.
 
+> **⚠️ Atenção:** O erro mais comum nesta etapa é copiar e colar a linha `proxy_pass` com formatação de link. Garanta que ela seja **texto puro**, como no exemplo corrigido abaixo.
+
 ```nginx
 # Configuração para zabbix.seudominio.com.br
 
@@ -42,7 +44,7 @@ server {
     error_log /var/log/nginx/zabbix.error.log;
 
     location / {
-        # Endereço IP e porta da sua aplicação interna
+        # Endereço IP e porta da sua aplicação interna (TEXTO PURO)
         proxy_pass [http://172.16.10.10](http://172.16.10.10); 
         
         # Cabeçalhos importantes para que a aplicação de destino 
@@ -96,7 +98,7 @@ O assistente irá guiá-lo:
 3.  Perguntará se você deseja compartilhar seu e-mail com a EFF.
 4.  Listará os domínios encontrados (ex: `zabbix.seudominio.com.br`) e perguntará para qual deles você quer o certificado. Selecione o número correspondente e pressione Enter.
 
-O Certbot obterá o certificado e **editará automaticamente** o seu arquivo (`/etc/nginx/conf.d/zabbix.seudominio.com.br.conf`) para configurar o SSL e redirecionar todo o tráfego HTTP para HTTPS.
+O Certbot obterá o certificado e **editará automaticamente** o seu arquivo de configuração do Nginx para configurar o SSL e redirecionar todo o tráfego HTTP para HTTPS.
 
 ### Passo 2.3: Verificar a Renovação Automática
 
@@ -124,7 +126,7 @@ Este método é ideal se seu servidor Nginx não está diretamente exposto na po
 2.  Vá para **My Profile -> API Tokens -> Create Token**.
 3.  Use o template **"Edit zone DNS"**.
 4.  Em **"Permissions"**, certifique-se de que está `Zone | DNS | Edit`.
-5.  Em **"Zone Resources"**, selecione `Include | Specific zone | seu.dominio` (ex: `seudominio.com.br`).
+5.  Em **"Zone Resources"**, selecione `Include | Specific zone | seudominio.com.br`.
 6.  Clique em "Continue to summary" e depois em "Create Token".
 7.  **Copie o token gerado e guarde-o em um local seguro. Você não poderá vê-lo novamente.**
 
@@ -173,13 +175,12 @@ O Certbot usará a API para criar os registros TXT, validar seu domínio e baixa
 
 ### Passo 3.5: Atualizar a Configuração do Nginx Manualmente
 
-Agora, edite novamente seu arquivo de configuração (`/etc/nginx/conf.d/zabbix.seudominio.com.br.conf`) para usar os certificados SSL. A configuração final deve se parecer com esta:
+Agora, edite novamente seu arquivo de configuração (`/etc/nginx/conf.d/zabbix.seudominio.com.br.conf`) para usar os certificados SSL.
 
 ```nginx
 # Redireciona todo o tráfego HTTP para HTTPS
 server {
     listen 80;
-    # <-- SUBSTITUA pelo seu subdomínio real
     server_name zabbix.seudominio.com.br;
     return 301 https://$host$request_uri;
 }
@@ -189,7 +190,7 @@ server {
     listen 443 ssl http2;
     server_name zabbix.seudominio.com.br;
 
-    # Lembre-se de substituir "seudominio.com.br" pelo seu domínio real.
+    # Caminhos para os certificados (substitua pelo seu domínio)
     ssl_certificate /etc/letsencrypt/live/seudominio.com.br/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/seudominio.com.br/privkey.pem;
     
@@ -201,8 +202,8 @@ server {
     error_log /var/log/nginx/zabbix.error.log;
 
     location / {
-        # Substitua pelo IP interno real da sua aplicação.
-        proxy_pass http://172.16.10.10;
+        # Substitua pelo IP interno real da sua aplicação
+        proxy_pass [http://172.16.10.10](http://172.16.10.10);
         
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -211,8 +212,44 @@ server {
     }
 }
 ```
-Teste e recarregue o Nginx:
+
+### Passo 3.6: Troubleshooting de Configuração SSL
+
+Ao usar o método `certonly`, o Nginx pode apresentar erros ao recarregar, pois alguns arquivos de configuração de segurança não são criados. **Se `sudo nginx -t` falhar, siga os passos abaixo.**
+
+#### Erro 1: `options-ssl-nginx.conf` não encontrado
+
+Se você receber um erro de "No such file or directory" para `options-ssl-nginx.conf`:
+1.  **Crie o arquivo:**
+    ```bash
+    sudo nano /etc/letsencrypt/options-ssl-nginx.conf
+    ```
+2.  **Cole o conteúdo padrão do Certbot:**
+    ```nginx
+    ssl_session_cache shared:le_nginx_SSL:10m;
+    ssl_session_timeout 1440m;
+    ssl_session_tickets off;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
+    ```
+
+#### Erro 2: `ssl-dhparams.pem` não encontrado
+
+Se o erro for relacionado ao arquivo `ssl-dhparams.pem`:
+1.  **Gere o arquivo com o OpenSSL.** Este comando pode demorar alguns minutos.
+    ```bash
+    sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
+    ```
+
+Após corrigir os possíveis erros, teste e recarregue o Nginx:
 ```bash
 sudo nginx -t && sudo systemctl reload nginx
 ```
 A renovação automática (`certbot renew`) funcionará da mesma forma, pois o Certbot salva as configurações usadas e reutilizará o método DNS-01.
+
+---
+
+Este guia agora está completo, incluindo as soluções para os problemas mais comuns durante a configuração manual do SSL.
