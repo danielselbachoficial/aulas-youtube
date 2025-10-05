@@ -6,7 +6,7 @@ Este documento detalha o passo a passo para implementar uma arquitetura de monit
 * **Banco de Dados (PostgreSQL):** Instalado em uma **VM dedicada** para máximo isolamento.
 * **Zabbix Server & Frontend:** Instalado em um **Container LXC não privilegiado** para performance.
 * **Grafana:** Instalado em um **Container LXC não privilegiado** separado.
-* **Proxy Reverso (Nginx Tradicional):** Instalado em um **Container LXC não privilegiado** para ser o ponto único e seguro de acesso web (HTTPS).
+* **Proxy Reverso (Nginx):** Instalado em um **Container LXC não privilegiado** para ser o ponto único e seguro de acesso web (HTTPS).
 
 ---
 
