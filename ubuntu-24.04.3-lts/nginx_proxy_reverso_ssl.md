@@ -1,255 +1,333 @@
-# Guia Completo: Nginx como Proxy Reverso com SSL Let's Encrypt Automático
+# Guia Completo: Deploy Seguro do Zabbix com Banco de Dados Separado e Proxy Reverso
 
-Este guia detalha como configurar o Nginx para atuar como um proxy reverso seguro, utilizando certificados SSL da Let's Encrypt. Abordaremos dois métodos para a obtenção e renovação dos certificados:
+Este documento detalha o passo a passo para implementar uma arquitetura de monitoramento com Zabbix de forma segura, segmentada e de alta performance, utilizando Proxmox.
 
-1.  **Método Padrão (HTTP-01):** Ideal para servidores diretamente expostos à internet. A renovação é automatizada via `systemd timer`.
-2.  **Método Avançado (DNS-01 com API do Cloudflare):** Perfeito para servidores que estão atrás de um firewall, para obter certificados wildcard (`*.seu.dominio`), ou para automatizar o processo sem expor a porta 80.
-
-## Pré-requisitos
-
-1.  **Nginx Instalado:** Utilize o [Guia de Instalação do Nginx](./nginx-installation.md) a partir do repositório oficial.
-2.  **Domínio Público:** Um nome de domínio registrado (ex: `seudominio.com.br`) e um subdomínio (`zabbix.seudominio.com.br`) apontando (via registro DNS do tipo `A`) para o **IP público** do seu firewall/servidor.
-3.  **Aplicação Interna:** Uma aplicação rodando em um IP privado na sua rede interna (ex: Zabbix em `172.16.10.10`).
-4.  **(Para o método Cloudflare)** Uma conta no Cloudflare gerenciando o DNS do seu domínio e um Token de API.
+**Arquitetura Final:**
+* **Banco de Dados (PostgreSQL):** Instalado em uma **VM dedicada** para máximo isolamento.
+* **Zabbix Server & Frontend:** Instalado em um **Container LXC não privilegiado** para performance.
+* **Grafana:** Instalado em um **Container LXC não privilegiado** separado.
+* **Proxy Reverso (Nginx):** Instalado em um **Container LXC não privilegiado** para ser o ponto único e seguro de acesso web (HTTPS).
 
 ---
 
-## Parte 1: Configuração Básica do Nginx como Proxy Reverso (HTTP)
+## Parte 1: Planejamento da Infraestrutura
 
-Antes de adicionar a criptografia, vamos garantir que o proxy reverso está funcionando.
+### 1.1. Plano de Rede e IPs (Exemplo)
 
-### Passo 1.1: Criar o Arquivo de Configuração
+Todos os componentes residirão em uma VLAN de servidores segura (ex: `172.16.10.0/24`).
 
-Vamos criar um arquivo de configuração para o nosso serviço. É uma boa prática criar um arquivo por serviço dentro de `/etc/nginx/conf.d/`.
+| Componente              | Tipo | Endereço IP Estático |
+| :---------------------- | :--- | :------------------- |
+| **VM do Banco de Dados** | VM   | `172.16.10.22`       |
+| **LXC do Zabbix** | LXC  | `172.16.10.20`       |
+| **LXC do Grafana** | LXC  | `172.16.10.21`       |
+| **LXC do Nginx Proxy** | LXC  | `172.16.10.23`       |
+
+### 1.2. Plano de Recursos
+
+| Componente              | vCPUs | RAM    | Swap   | Disco |
+| :---------------------- | :---- | :----- | :----- | :---- |
+| **VM do Banco de Dados** | 2     | 4 GB   | 4 GB   | 50 GB |
+| **LXC do Zabbix** | 2     | 2 GB   | 2 GB   | 20 GB |
+| **LXC do Grafana** | 1     | 1 GB   | 1 GB   | 10 GB |
+| **LXC do Nginx Proxy** | 1     | 512 MB | 512 MB | 8 GB  |
+
+---
+
+## Parte 2: Configurando a VM do Banco de Dados (PostgreSQL)
+
+Esta é a base do nosso ambiente. A segurança aqui é fundamental.
+
+### 2.1. Criação e Instalação
+1.  Crie a VM no Proxmox com os recursos planejados e instale o **Ubuntu Server 22.04 LTS**.
+2.  Configure o IP estático `172.16.10.22/24`.
+3.  Instale o PostgreSQL:
+    ```bash
+    sudo apt update && sudo apt install postgresql -y
+    ```
+
+### 2.2. Hardening e Configuração do PostgreSQL
+O objetivo é usar uma porta não padrão, nomes não padrão e liberar o acesso apenas para IPs específicos.
+
+1.  **Alterar Porta e `listen_addresses`:**
+    Edite `sudo nano /etc/postgresql/14/main/postgresql.conf`. (Ajuste o caminho `14` se sua versão for diferente).
+    ```ini
+    # Altere para escutar em todos os IPs
+    listen_addresses = '*'
+    # Altere para uma porta não padrão
+    port = 6432
+    ```
+2.  **Reinicie o PostgreSQL:** `sudo systemctl restart postgresql`.
+
+3.  **Criar Usuários Não Padrão:**
+    Acesse o console do PostgreSQL com `sudo -u postgres psql` e execute:
+    ```sql
+    -- 1. Crie um usuário administrativo para você (não use 'postgres' para acesso remoto)
+    CREATE ROLE meu_admin_db WITH LOGIN SUPERUSER PASSWORD 'senha-forte-para-seu-admin';
+
+    -- 2. Crie um usuário específico para a aplicação Zabbix
+    CREATE USER zabbix_app_user WITH PASSWORD 'senha-forte-para-aplicacao';
+
+    -- 3. Crie o banco de dados do Zabbix com o novo usuário como dono
+    CREATE DATABASE zabbix_db WITH OWNER zabbix_app_user;
+    ```
+    > **Troubleshooting Comum:** Se você receber erros de sintaxe ao usar senhas com caracteres especiais, use o método "Dollar Quoting": `PASSWORD $$SuaSenha!@#$$`
+
+4.  **Configurar Regras de Acesso (`pg_hba.conf`):**
+    Edite `sudo nano /etc/postgresql/14/main/pg_hba.conf` para permitir o acesso remoto.
+    ```ini
+    # ... (regras padrão) ...
+
+    # === REGRAS PERSONALIZADAS ===
+    # Permite que a aplicação Zabbix acesse seu banco a partir do IP do container
+    host    zabbix_db       zabbix_app_user    172.16.10.20/32         scram-sha-256
+
+    # Permite que o seu usuário administrativo acesse de redes autorizadas
+    host    all             meu_admin_db       10.0.2.0/24             scram-sha-256
+    host    all             meu_admin_db       10.0.11.0/29            scram-sha-256
+    ```
+5.  **Recarregue as regras:** `sudo systemctl reload postgresql`.
+
+    > **Troubleshooting Comum:** Se a conexão remota falhar com `no pg_hba.conf entry for host`, significa que o IP de origem da sua conexão não está listado nas regras acima. Adicione o IP/rede correto ao arquivo.
+
+6.  **Firewall do SO (UFW):** Libere a nova porta.
+    ```bash
+    sudo ufw allow 6432/tcp
+    sudo ufw enable
+    ```
+
+---
+
+## Parte 3: Configurando o Container LXC do Zabbix
+
+### 3.1. Criação e Instalação
+1.  Crie o container LXC no Proxmox. **IMPORTANTE:** Marque a opção **`Unprivileged container`**.
+2.  Configure o IP estático `172.16.10.20/24`.
+3.  Acesse o terminal do container.
+
+### 3.2. Instalação dos Pacotes
+Execute todos os comandos de instalação necessários.
 
 ```bash
-# Substitua 'zabbix.seudominio.com.br' pelo seu subdomínio
-sudo nano /etc/nginx/conf.d/zabbix.seudominio.com.br.conf
+sudo apt update && sudo apt upgrade -y
+
+# Adiciona repositórios para garantir os pacotes PHP
+sudo add-apt-repository universe -y
+sudo add-apt-repository ppa:ondrej/php -y
+sudo apt update
+
+# Instala todos os componentes de uma vez
+sudo apt install -y \
+    zabbix-server-pgsql \
+    zabbix-frontend-php \
+    zabbix-agent \
+    nginx \
+    php8.1-fpm \
+    php8.1-pgsql \
+    php8.1-mbstring \
+    php8.1-gd \
+    php8.1-xml \
+    php8.1-bcmath \
+    php8.1-ldap \
+    postgresql-client \
+    zabbix-sql-scripts
 ```
 
-### Passo 1.2: Adicionar a Configuração do Proxy
+### 3.3. Importar o Schema do Banco de Dados Remoto
+```bash
+# O comando pedirá a senha do usuário 'zabbix_app_user'
+zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | psql -U zabbix_app_user -d zabbix_db -h 172.16.10.22 -p 6432 -W
+```
+> **Troubleshooting Comum:** Se receber `psql: command not found` ou `server.sql.gz: No such file or directory`, os pacotes `postgresql-client` ou `zabbix-sql-scripts` não foram instalados. Execute o comando de instalação do passo 3.2 novamente.
 
-Cole o seguinte conteúdo no arquivo. Ele instrui o Nginx a encaminhar todo o tráfego para sua aplicação interna.
+### 3.4. Configurar o Zabbix Server
+Edite `sudo nano /etc/zabbix/zabbix_server.conf` e ajuste os parâmetros do banco de dados.
 
-> **⚠️ Atenção:** O erro mais comum nesta etapa é copiar e colar a linha `proxy_pass` com formatação de link. Garanta que ela seja **texto puro**, como no exemplo corrigido abaixo.
+```ini
+DBHost=172.16.10.22
+DBName=zabbix_db
+DBUser=zabbix_app_user
+DBPassword=senha-forte-para-aplicacao
+DBPort=6432
+```
+> **Troubleshooting Comum:** Se o Zabbix não iniciar e o log (`/var/log/zabbix/zabbix_server.log`) mostrar `database is down`, verifique cada letra e número nestas configurações.
 
-```nginx
-# Configuração para zabbix.seudominio.com.br
+### 3.5. Configurar o Nginx (Servidor de Aplicação Interno)
+1.  Crie `sudo nano /etc/nginx/sites-available/zabbix.conf` com o conteúdo abaixo. **Atenção à versão do PHP.**
+    ```nginx
+    server {
+        listen 80;
+        server_name _;
+        root /usr/share/zabbix;
+        index index.php;
 
-server {
-    listen 80;
-    server_name zabbix.seudominio.com.br;
+        location / {
+            try_files $uri $uri/ /index.php?$args;
+        }
 
-    access_log /var/log/nginx/zabbix.access.log;
-    error_log /var/log/nginx/zabbix.error.log;
-
-    location / {
-        # Endereço IP e porta da sua aplicação interna (TEXTO PURO)
-        proxy_pass [http://172.16.10.10](http://172.16.10.10); 
-        
-        # Cabeçalhos importantes para que a aplicação de destino 
-        # saiba a origem real da requisição.
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            # Ajuste a versão do PHP-FPM se for diferente
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
     }
-}
-```
+    ```
+2.  Ative o site:
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/zabbix.conf /etc/nginx/sites-enabled/
+    sudo rm /etc/nginx/sites-enabled/default
+    ```
 
-### Passo 1.3: Testar e Aplicar a Configuração
-
+### 3.6. Iniciar os Serviços
 ```bash
-# Testa a sintaxe dos arquivos de configuração
-sudo nginx -t
-
-# Se a sintaxe estiver OK, recarregue o Nginx para aplicar as mudanças
-sudo systemctl reload nginx
+# Ajuste a versão do PHP se for diferente
+sudo systemctl restart zabbix-server zabbix-agent nginx php8.1-fpm
+sudo systemctl enable zabbix-server zabbix-agent nginx php8.1-fpm
 ```
-
-Neste ponto, ao acessar `http://zabbix.seudominio.com.br` no seu navegador, você já deve ver a página do seu Zabbix.
 
 ---
 
-## Parte 2: Habilitando HTTPS com Let's Encrypt (Método Padrão)
+## Parte 4: Configurando o Container LXC do Grafana
 
-Este método usa o desafio `HTTP-01`, onde o Let's Encrypt acessa seu servidor na porta 80 para validar que você controla o domínio.
+Esta seção detalha a instalação do Grafana em seu próprio container isolado.
 
-### Passo 2.1: Instalar o Certbot
+### 4.1. Criação e Instalação do Container
+1.  Crie o container LXC no Proxmox. **IMPORTANTE:** Marque a opção **`Unprivileged container`**.
+2.  Configure o IP estático `172.16.10.21/24`.
+3.  Acesse o terminal do container e execute os comandos de instalação.
 
-O Certbot é a ferramenta que automatiza a obtenção e renovação dos certificados.
-
+### 4.2. Instalação do Grafana e Plugin do Zabbix
 ```bash
-sudo apt install certbot python3-certbot-nginx -y
+sudo apt update && sudo apt upgrade -y
+
+# Instala pré-requisitos
+sudo apt install -y apt-transport-https software-properties-common wget
+
+# Adiciona a chave de assinatura do Grafana
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - [https://apt.grafana.com/gpg.key](https://apt.grafana.com/gpg.key) | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+
+# Adiciona o repositório do Grafana
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] [https://apt.grafana.com](https://apt.grafana.com) stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+
+# Instala o Grafana
+sudo apt update
+sudo apt install grafana -y
+
+# Instala o plugin do Zabbix
+sudo grafana-cli plugins install alexanderzobnin-zabbix-app
+
+# Inicia e habilita o serviço do Grafana
+sudo systemctl restart grafana-server
+sudo systemctl enable grafana-server
 ```
 
-### Passo 2.2: Gerar o Certificado SSL
+---
 
-O Certbot é inteligente. Ele lerá seus arquivos de configuração do Nginx e oferecerá a opção de proteger os sites que encontrar.
+## Parte 5: Configuração da Interface Web do Zabbix (Wizard)
 
+1.  Acesse o IP do container Zabbix (`http://172.16.10.20`) ou o domínio configurado no proxy reverso.
+2.  Siga o assistente de configuração.
+
+> **Troubleshooting 1: Erro de `Locale not found`**
+> Se aparecer um erro sobre `en_US` não encontrado, execute os comandos no container do Zabbix:
+> ```bash
+> sudo apt install locales -y
+> sudo sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+> sudo locale-gen
+> sudo systemctl restart php8.1-fpm nginx # Ajuste a versão do PHP
+> ```
+
+> **Troubleshooting 2: `Zabbix server is running: No`**
+> Este erro indica que o frontend não consegue se comunicar com o serviço `zabbix-server`.
+> 1. Verifique o log: `sudo tail -f /var/log/zabbix/zabbix_server.log`.
+> 2. O erro quase sempre é uma configuração incorreta no `/etc/zabbix/zabbix_server.conf`. Corrija e reinicie com `sudo systemctl restart zabbix-server`.
+> 3. No wizard, certifique-se de que o Zabbix Server está configurado como `localhost` na porta `10051`.
+
+3.  Na tela "Configure DB connection", preencha os dados do seu banco de dados remoto:
+    * **Database host:** `172.16.10.22`
+    * **Database port:** `6432`
+    * **Database name:** `zabbix_db`
+    * **User:** `zabbix_app_user`
+    * **Password:** `senha-forte-para-aplicacao`
+4.  Prossiga até o final. O login padrão é **Username:** `Admin` e **Password:** `zabbix`. **Altere-o imediatamente!**
+
+---
+
+## Parte 6: Configuração do Nginx como Proxy Reverso
+
+Esta abordagem oferece controle total sobre a configuração, gerenciada via linha de comando.
+
+### 6.1. Criação do Container LXC para o Proxy Reverso
+1.  Crie o container LXC (`172.16.10.23`) no Proxmox.
+2.  **Opções:**
+    * **Unprivileged container:** **SIM** (essencial para segurança).
+    * **Nesting:** **NÃO** (não é necessário, pois não vamos usar Docker).
+
+### 6.2. Instalação do Nginx e Certbot
+Conecte-se ao terminal do novo container de proxy e execute:
 ```bash
-# Inicia o processo de obtenção do certificado
+# Instale Nginx (preferencialmente do repositório oficial) e o Certbot
+sudo apt update && sudo apt upgrade -y
+sudo apt install nginx certbot python3-certbot-nginx -y
+```
+
+### 6.3. Configuração dos Sites (Virtual Hosts)
+Crie um arquivo de configuração para cada serviço em `/etc/nginx/sites-available/`.
+
+1.  **Arquivo para o Zabbix (`zabbix.seudominio.com.br.conf`):**
+    ```nginx
+    server {
+        listen 80;
+        server_name zabbix.seudominio.com.br;
+        location / {
+            proxy_pass [http://172.16.10.20](http://172.16.10.20); # IP do container Zabbix
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+    ```
+2.  **Arquivo para o Grafana (`grafana.seudominio.com.br.conf`):**
+    ```nginx
+    server {
+        listen 80;
+        server_name grafana.seudominio.com.br;
+        location / {
+            proxy_pass [http://172.16.10.21:3000](http://172.16.10.21:3000); # IP e porta do container Grafana
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+    ```
+
+3.  **Ative os sites:**
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/zabbix.seudominio.com.br.conf /etc/nginx/sites-enabled/
+    sudo ln -s /etc/nginx/sites-available/grafana.seudominio.com.br.conf /etc/nginx/sites-enabled/
+    sudo rm /etc/nginx/sites-enabled/default
+    sudo nginx -t && sudo systemctl reload nginx
+    ```
+
+### 6.4. Habilitando SSL com Certbot
+O plugin do Certbot para Nginx automatiza a configuração do SSL.
+```bash
 sudo certbot --nginx
 ```
-
-O assistente irá guiá-lo:
-1.  Pedirá seu **e-mail** (para notificações de expiração).
-2.  Pedirá que você concorde com os **Termos de Serviço**.
-3.  Perguntará se você deseja compartilhar seu e-mail com a EFF.
-4.  Listará os domínios encontrados (ex: `zabbix.seudominio.com.br`) e perguntará para qual deles você quer o certificado. Selecione o número correspondente e pressione Enter.
-
-O Certbot obterá o certificado e **editará automaticamente** o seu arquivo de configuração do Nginx para configurar o SSL e redirecionar todo o tráfego HTTP para HTTPS.
-
-### Passo 2.3: Verificar a Renovação Automática
-
-O pacote do Certbot já cria um `systemd timer` que tentará renovar seus certificados automaticamente.
-
-```bash
-# Verifique se o timer está ativo e agendado para rodar
-sudo systemctl list-timers | grep certbot
-
-# Faça um teste "a seco" para simular uma renovação e garantir que tudo está funcionando
-sudo certbot renew --dry-run
-```
-
-Se o teste for bem-sucedido, você não precisa fazer mais nada. Seus certificados serão renovados automaticamente.
+Siga o assistente, selecionando os domínios que deseja proteger e escolhendo a opção de redirecionar HTTP para HTTPS. A renovação será configurada automaticamente.
 
 ---
 
-## Parte 3: Habilitando HTTPS com a API do Cloudflare (Método DNS-01)
+## Parte 7: Configuração Final no Grafana
 
-Este método é ideal se seu servidor Nginx não está diretamente exposto na porta 80 ou se você quer um **certificado wildcard** (ex: `*.seudominio.com.br`). Ele funciona criando um registro TXT temporário no seu DNS via API para provar o controle do domínio.
+1.  Acesse o Grafana pela URL segura: `https://grafana.seudominio.com.br`.
+2.  Faça o login (`admin`/`admin`) e altere a senha padrão.
+3.  Vá em **Connections -> Data sources -> Add new data source** e selecione **Zabbix**.
+4.  **Configure a Conexão:**
+    * **URL:** `http://172.16.10.20/api_jsonrpc.php`
+    * **Username/Password:** Crie um usuário **somente leitura** no Zabbix e use as credenciais dele aqui.
+5.  Clique em **"Save & test"**.
 
-### Passo 3.1: Criar um Token da API no Cloudflare
-
-1.  Faça login no seu painel do Cloudflare.
-2.  Vá para **My Profile -> API Tokens -> Create Token**.
-3.  Use o template **"Edit zone DNS"**.
-4.  Em **"Permissions"**, certifique-se de que está `Zone | DNS | Edit`.
-5.  Em **"Zone Resources"**, selecione `Include | Specific zone | seudominio.com.br`.
-6.  Clique em "Continue to summary" e depois em "Create Token".
-7.  **Copie o token gerado e guarde-o em um local seguro. Você não poderá vê-lo novamente.**
-
-### Passo 3.2: Instalar o Plugin do Certbot para Cloudflare
-
-```bash
-sudo apt install python3-certbot-dns-cloudflare -y
-```
-
-### Passo 3.3: Criar o Arquivo de Credenciais
-
-Crie um arquivo para armazenar seu token de forma segura.
-
-```bash
-# Crie o diretório e o arquivo
-sudo mkdir -p /root/.secrets
-sudo nano /root/.secrets/cloudflare.ini
-```
-
-Adicione o seguinte conteúdo ao arquivo, substituindo pelo seu token:
-```ini
-# Credenciais da API do Cloudflare para o Certbot
-dns_cloudflare_api_token = SEU_TOKEN_DA_API_AQUI
-```
-Salve e feche o arquivo. Agora, restrinja as permissões para que apenas o `root` possa lê-lo.
-```bash
-sudo chmod 600 /root/.secrets/cloudflare.ini
-```
-
-### Passo 3.4: Gerar o Certificado (Exemplo com Wildcard)
-
-Usaremos o comando `certonly` para apenas obter o certificado, sem instalar no Nginx (faremos isso manualmente).
-
-```bash
-# Substitua os domínios e o e-mail pelos seus
-sudo certbot certonly \
-   --dns-cloudflare \
-   --dns-cloudflare-credentials /root/.secrets/cloudflare.ini \
-   -d seudominio.com.br \
-   -d '*.seudominio.com.br' \
-   --agree-tos \
-   -m seu-email@seudominio.com.br \
-   --no-eff-email
-```
-O Certbot usará a API para criar os registros TXT, validar seu domínio e baixar os certificados para `/etc/letsencrypt/live/seudominio.com.br/`.
-
-### Passo 3.5: Atualizar a Configuração do Nginx Manualmente
-
-Agora, edite novamente seu arquivo de configuração (`/etc/nginx/conf.d/zabbix.seudominio.com.br.conf`) para usar os certificados SSL.
-
-```nginx
-# Redireciona todo o tráfego HTTP para HTTPS
-server {
-    listen 80;
-    server_name zabbix.seudominio.com.br;
-    return 301 https://$host$request_uri;
-}
-
-# Configuração principal do Proxy Reverso com SSL
-server {
-    listen 443 ssl http2;
-    server_name zabbix.seudominio.com.br;
-
-    # Caminhos para os certificados (substitua pelo seu domínio)
-    ssl_certificate /etc/letsencrypt/live/seudominio.com.br/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/seudominio.com.br/privkey.pem;
-    
-    # Configurações de SSL recomendadas
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    access_log /var/log/nginx/zabbix.access.log;
-    error_log /var/log/nginx/zabbix.error.log;
-
-    location / {
-        # Substitua pelo IP interno real da sua aplicação
-        proxy_pass [http://172.16.10.10](http://172.16.10.10);
-        
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-### Passo 3.6: Troubleshooting de Configuração SSL
-
-Ao usar o método `certonly`, o Nginx pode apresentar erros ao recarregar, pois alguns arquivos de configuração de segurança não são criados. **Se `sudo nginx -t` falhar, siga os passos abaixo.**
-
-#### Erro 1: `options-ssl-nginx.conf` não encontrado
-
-Se você receber um erro de "No such file or directory" para `options-ssl-nginx.conf`:
-1.  **Crie o arquivo:**
-    ```bash
-    sudo nano /etc/letsencrypt/options-ssl-nginx.conf
-    ```
-2.  **Cole o conteúdo padrão do Certbot:**
-    ```nginx
-    ssl_session_cache shared:le_nginx_SSL:10m;
-    ssl_session_timeout 1440m;
-    ssl_session_tickets off;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers off;
-
-    ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
-    ```
-
-#### Erro 2: `ssl-dhparams.pem` não encontrado
-
-Se o erro for relacionado ao arquivo `ssl-dhparams.pem`:
-1.  **Gere o arquivo com o OpenSSL.** Este comando pode demorar alguns minutos.
-    ```bash
-    sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
-    ```
-
-Após corrigir os possíveis erros, teste e recarregue o Nginx:
-```bash
-sudo nginx -t && sudo systemctl reload nginx
-```
-A renovação automática (`certbot renew`) funcionará da mesma forma, pois o Certbot salva as configurações usadas e reutilizará o método DNS-01.
-
----
-
-Este guia agora está completo, incluindo as soluções para os problemas mais comuns durante a configuração manual do SSL.
+Parabéns! Você tem um ambiente de monitoramento completo, seguro e bem documentado.
