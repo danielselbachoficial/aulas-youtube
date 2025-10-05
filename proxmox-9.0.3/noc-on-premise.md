@@ -6,7 +6,7 @@ Este documento detalha o passo a passo para implementar uma arquitetura de monit
 * **Banco de Dados (PostgreSQL):** Instalado em uma **VM dedicada** para máximo isolamento.
 * **Zabbix Server & Frontend:** Instalado em um **Container LXC não privilegiado** para performance.
 * **Grafana:** Instalado em um **Container LXC não privilegiado** separado.
-* **Proxy Reverso (Nginx Proxy Manager):** Instalado em um **Container LXC não privilegiado** para ser o ponto único e seguro de acesso web (HTTPS).
+* **Proxy Reverso (Nginx Tradicional):** Instalado em um **Container LXC não privilegiado** para ser o ponto único e seguro de acesso web (HTTPS).
 
 ---
 
@@ -14,23 +14,23 @@ Este documento detalha o passo a passo para implementar uma arquitetura de monit
 
 ### 1.1. Plano de Rede e IPs (Exemplo)
 
-Todos os componentes residirão na VLAN de `Serviços Essenciais (NOC)`.
+Todos os componentes residirão em uma VLAN de servidores segura (ex: `172.16.10.0/24`).
 
-| Componente | Tipo | Endereço IP Estático |
-| :--- | :--- | :--- |
-| **VM do Banco de Dados** | VM | `172.16.10.22` |
-| **LXC do Zabbix** | LXC | `172.16.10.20` |
-| **LXC do Grafana** | LXC | `172.16.10.21` |
-| **LXC do Nginx Proxy** | LXC | `172.16.10.23` |
+| Componente              | Tipo | Endereço IP Estático |
+| :---------------------- | :--- | :------------------- |
+| **VM do Banco de Dados** | VM   | `172.16.10.22`       |
+| **LXC do Zabbix** | LXC  | `172.16.10.20`       |
+| **LXC do Grafana** | LXC  | `172.16.10.21`       |
+| **LXC do Nginx Proxy** | LXC  | `172.16.10.23`       |
 
 ### 1.2. Plano de Recursos
 
-| Componente | vCPUs | RAM | Swap | Disco |
-| :--- | :--- | :--- | :--- | :--- |
-| **VM do Banco de Dados** | 2 | 4 GB | 4 GB | 50 GB |
-| **LXC do Zabbix** | 2 | 2 GB | 2 GB | 20 GB |
-| **LXC do Grafana** | 1 | 1 GB | 1 GB | 10 GB |
-| **LXC do Nginx Proxy** | 1 | 512 MB | 512 MB | 8 GB |
+| Componente              | vCPUs | RAM    | Swap   | Disco |
+| :---------------------- | :---- | :----- | :----- | :---- |
+| **VM do Banco de Dados** | 2     | 4 GB   | 4 GB   | 50 GB |
+| **LXC do Zabbix** | 2     | 2 GB   | 2 GB   | 20 GB |
+| **LXC do Grafana** | 1     | 1 GB   | 1 GB   | 10 GB |
+| **LXC do Nginx Proxy** | 1     | 512 MB | 512 MB | 8 GB  |
 
 ---
 
@@ -50,14 +50,14 @@ Esta é a base do nosso ambiente. A segurança aqui é fundamental.
 O objetivo é usar uma porta não padrão, nomes não padrão e liberar o acesso apenas para IPs específicos.
 
 1.  **Alterar Porta e `listen_addresses`:**
-    Edite o arquivo `sudo nano /etc/postgresql/14/main/postgresql.conf`. (Ajuste a versão do PostgreSQL se for diferente).
+    Edite `sudo nano /etc/postgresql/14/main/postgresql.conf`. (Ajuste o caminho `14` se sua versão for diferente).
     ```ini
     # Altere para escutar em todos os IPs
     listen_addresses = '*'
     # Altere para uma porta não padrão
     port = 6432
     ```
-2.  **Reinicie o PostgreSQL** para aplicar as mudanças: `sudo systemctl restart postgresql`.
+2.  **Reinicie o PostgreSQL:** `sudo systemctl restart postgresql`.
 
 3.  **Criar Usuários Não Padrão:**
     Acesse o console do PostgreSQL com `sudo -u postgres psql` e execute:
@@ -74,23 +74,23 @@ O objetivo é usar uma porta não padrão, nomes não padrão e liberar o acesso
     > **Troubleshooting Comum:** Se você receber erros de sintaxe ao usar senhas com caracteres especiais, use o método "Dollar Quoting": `PASSWORD $$SuaSenha!@#$$`
 
 4.  **Configurar Regras de Acesso (`pg_hba.conf`):**
-    Edite o arquivo `sudo nano /etc/postgresql/14/main/pg_hba.conf` e adicione as regras para permitir o acesso remoto. O arquivo final deve se parecer com isto:
+    Edite `sudo nano /etc/postgresql/14/main/pg_hba.conf` para permitir o acesso remoto.
     ```ini
-    # ... (regras padrão para 'local' e '127.0.0.1') ...
+    # ... (regras padrão) ...
 
     # === REGRAS PERSONALIZADAS ===
     # Permite que a aplicação Zabbix acesse seu banco a partir do IP do container
-    host    zabbix_db       zabbix_app_user    172.16.10.20/32          scram-sha-256
+    host    zabbix_db       zabbix_app_user    172.16.10.20/32         scram-sha-256
 
     # Permite que o seu usuário administrativo acesse de redes autorizadas
-    host    all             meu_admin_db       <rede-local>             scram-sha-256
-    host    all             meu_admin_db       <rede-gerencia-proxmox>            scram-sha-256
+    host    all             meu_admin_db       10.0.2.0/24             scram-sha-256
+    host    all             meu_admin_db       10.0.11.0/29            scram-sha-256
     ```
 5.  **Recarregue as regras:** `sudo systemctl reload postgresql`.
 
-    > **Troubleshooting Comum:** Se a conexão remota falhar com o erro `no pg_hba.conf entry for host`, significa que o IP de origem da sua conexão não está listado nas regras acima. Adicione o IP/rede correto ao arquivo.
+    > **Troubleshooting Comum:** Se a conexão remota falhar com `no pg_hba.conf entry for host`, significa que o IP de origem da sua conexão não está listado nas regras acima. Adicione o IP/rede correto ao arquivo.
 
-6.  **Firewall do SO (UFW):** Libere a nova porta do PostgreSQL.
+6.  **Firewall do SO (UFW):** Libere a nova porta.
     ```bash
     sudo ufw allow 6432/tcp
     sudo ufw enable
@@ -111,8 +111,8 @@ Execute todos os comandos de instalação necessários.
 ```bash
 sudo apt update && sudo apt upgrade -y
 
-# Adiciona o repositório 'universe' e o PPA para garantir os pacotes PHP
-sudo add-apt-repository universe
+# Adiciona repositórios para garantir os pacotes PHP
+sudo add-apt-repository universe -y
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update
 
@@ -122,8 +122,13 @@ sudo apt install -y \
     zabbix-frontend-php \
     zabbix-agent \
     nginx \
-    php8.2-fpm \
-    php8.2-pgsql \
+    php8.1-fpm \
+    php8.1-pgsql \
+    php8.1-mbstring \
+    php8.1-gd \
+    php8.1-xml \
+    php8.1-bcmath \
+    php8.1-ldap \
     postgresql-client \
     zabbix-sql-scripts
 ```
@@ -133,10 +138,10 @@ sudo apt install -y \
 # O comando pedirá a senha do usuário 'zabbix_app_user'
 zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | psql -U zabbix_app_user -d zabbix_db -h 172.16.10.22 -p 6432 -W
 ```
-> **Troubleshooting Comum:** Se você receber `psql: command not found` ou `server.sql.gz: No such file or directory`, significa que os pacotes `postgresql-client` ou `zabbix-sql-scripts` não foram instalados. Execute o comando de instalação do passo 3.2 novamente.
+> **Troubleshooting Comum:** Se receber `psql: command not found` ou `server.sql.gz: No such file or directory`, os pacotes `postgresql-client` ou `zabbix-sql-scripts` não foram instalados. Execute o comando de instalação do passo 3.2 novamente.
 
 ### 3.4. Configurar o Zabbix Server
-Edite o arquivo `sudo nano /etc/zabbix/zabbix_server.conf` e ajuste os parâmetros do banco de dados.
+Edite `sudo nano /etc/zabbix/zabbix_server.conf` e ajuste os parâmetros do banco de dados.
 
 ```ini
 DBHost=172.16.10.22
@@ -145,10 +150,10 @@ DBUser=zabbix_app_user
 DBPassword=senha-forte-para-aplicacao
 DBPort=6432
 ```
-> **Troubleshooting Comum:** Se o serviço do Zabbix não iniciar e o log (`/var/log/zabbix/zabbix_server.log`) mostrar `database is down` ou `connection refused`, verifique novamente **cada letra e número** nestas configurações. É o ponto de falha mais comum.
+> **Troubleshooting Comum:** Se o Zabbix não iniciar e o log (`/var/log/zabbix/zabbix_server.log`) mostrar `database is down`, verifique cada letra e número nestas configurações.
 
 ### 3.5. Configurar o Nginx (Servidor de Aplicação Interno)
-1.  Crie o arquivo `sudo nano /etc/nginx/sites-available/zabbix.conf` com o conteúdo abaixo:
+1.  Crie `sudo nano /etc/nginx/sites-available/zabbix.conf` com o conteúdo abaixo. **Atenção à versão do PHP.**
     ```nginx
     server {
         listen 80;
@@ -162,6 +167,7 @@ DBPort=6432
 
         location ~ \.php$ {
             include snippets/fastcgi-php.conf;
+            # Ajuste a versão do PHP-FPM se for diferente
             fastcgi_pass unix:/run/php/php8.1-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         }
@@ -175,6 +181,7 @@ DBPort=6432
 
 ### 3.6. Iniciar os Serviços
 ```bash
+# Ajuste a versão do PHP se for diferente
 sudo systemctl restart zabbix-server zabbix-agent nginx php8.1-fpm
 sudo systemctl enable zabbix-server zabbix-agent nginx php8.1-fpm
 ```
@@ -184,21 +191,21 @@ sudo systemctl enable zabbix-server zabbix-agent nginx php8.1-fpm
 ## Parte 4: Configuração da Interface Web do Zabbix
 
 1.  Acesse o IP do container Zabbix (`http://172.16.10.20`) ou o domínio configurado no proxy reverso.
-2.  Você será recebido pelo assistente de configuração.
+2.  Siga o assistente de configuração.
 
 > **Troubleshooting 1: Erro de `Locale not found`**
-> Se aparecer um erro sobre `en_US` não encontrado, execute os seguintes comandos no container do Zabbix e recarregue a página:
+> Se aparecer um erro sobre `en_US` não encontrado, execute os comandos no container do Zabbix:
 > ```bash
 > sudo apt install locales -y
 > sudo sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
 > sudo locale-gen
-> sudo systemctl restart php8.1-fpm nginx
+> sudo systemctl restart php8.1-fpm nginx # Ajuste a versão do PHP
 > ```
 
 > **Troubleshooting 2: `Zabbix server is running: No`**
 > Este erro indica que o frontend não consegue se comunicar com o serviço `zabbix-server`.
 > 1. Verifique o log: `sudo tail -f /var/log/zabbix/zabbix_server.log`.
-> 2. O erro quase sempre é uma configuração incorreta no `/etc/zabbix/zabbix_server.conf` (IP, porta, ou senha do banco de dados). Corrija o arquivo e reinicie o serviço com `sudo systemctl restart zabbix-server`.
+> 2. O erro quase sempre é uma configuração incorreta no `/etc/zabbix/zabbix_server.conf`. Corrija e reinicie com `sudo systemctl restart zabbix-server`.
 > 3. No wizard, certifique-se de que o Zabbix Server está configurado como `localhost` na porta `10051`.
 
 3.  Na tela "Configure DB connection", preencha os dados do seu banco de dados remoto:
@@ -211,18 +218,65 @@ sudo systemctl enable zabbix-server zabbix-agent nginx php8.1-fpm
 
 ---
 
-## Parte 5: Configuração do Nginx Proxy Manager
+## Parte 5: Configuração do Nginx Tradicional como Proxy Reverso
 
-1.  Crie um container LXC (`172.16.10.23`) para o NPM. **IMPORTANTE:** Marque as opções **`Unprivileged container`** e **`Nesting`**.
-2.  Instale o Docker e o Docker Compose.
-3.  Crie e inicie o container do NPM.
-4.  No painel do NPM, vá em **Hosts -> Proxy Hosts -> Add Proxy Host**.
-5.  Configure o acesso para o Zabbix:
-    * **Domain Name:** `zabbix.seudominio.com.br`
-    * **Scheme:** `http`
-    * **Forward Hostname / IP:** `172.16.10.20`
-    * **Forward Port:** `80`
-    * Na aba **SSL**, selecione "Request a new SSL Certificate", marque "Force SSL" e "HTTP/2 Support".
-6.  Repita o processo para o Grafana (`grafana.seudominio.com.br` apontando para `172.16.10.21` na porta `3000`).
+Esta abordagem oferece controle total sobre a configuração, gerenciada via linha de comando.
 
-Parabéns! Você tem um ambiente de monitoramento completo, seguro e bem documentado.
+### 5.1. Criação do Container LXC para o Proxy Reverso
+1.  Crie o container LXC (`172.16.10.23`) no Proxmox.
+2.  **Opções:**
+    * **Unprivileged container:** **SIM** (essencial para segurança).
+    * **Nesting:** **NÃO** (não é necessário, pois não vamos usar Docker).
+
+### 5.2. Instalação do Nginx e Certbot
+Conecte-se ao terminal do novo container de proxy e execute:
+```bash
+# Instale Nginx (preferencialmente do repositório oficial) e o Certbot
+sudo apt update && sudo apt upgrade -y
+sudo apt install nginx certbot python3-certbot-nginx -y
+```
+
+### 5.3. Configuração dos Sites (Virtual Hosts)
+Crie um arquivo de configuração para cada serviço em `/etc/nginx/sites-available/`.
+
+1.  **Arquivo para o Zabbix (`zabbix.seudominio.com.br.conf`):**
+    ```nginx
+    server {
+        listen 80;
+        server_name zabbix.seudominio.com.br;
+        location / {
+            proxy_pass [http://172.16.10.20](http://172.16.10.20); # IP do container Zabbix
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+    ```
+2.  **Arquivo para o Grafana (`grafana.seudominio.com.br.conf`):**
+    ```nginx
+    server {
+        listen 80;
+        server_name grafana.seudominio.com.br;
+        location / {
+            proxy_pass [http://172.16.10.21:3000](http://172.16.10.21:3000); # IP e porta do container Grafana
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+    ```
+
+3.  **Ative os sites:**
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/zabbix.seudominio.com.br.conf /etc/nginx/sites-enabled/
+    sudo ln -s /etc/nginx/sites-available/grafana.seudominio.com.br.conf /etc/nginx/sites-enabled/
+    sudo rm /etc/nginx/sites-enabled/default
+    sudo nginx -t && sudo systemctl reload nginx
+    ```
+
+### 5.4. Habilitando SSL com Certbot
+O plugin do Certbot para Nginx automatiza a configuração do SSL.
+```bash
+sudo certbot --nginx
+```
+Siga o assistente, selecionando os domínios que deseja proteger e escolhendo a opção de redirecionar HTTP para HTTPS. A renovação será configurada automaticamente.
