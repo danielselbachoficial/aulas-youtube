@@ -218,7 +218,7 @@ sudo systemctl enable zabbix-server zabbix-agent nginx php8.1-fpm
 
 ---
 
-## Parte 5: Configuração do Nginx Tradicional como Proxy Reverso
+## Parte 5: Configuração do Nginx como Proxy Reverso
 
 Esta abordagem oferece controle total sobre a configuração, gerenciada via linha de comando.
 
