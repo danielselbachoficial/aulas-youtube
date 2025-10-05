@@ -1,4 +1,4 @@
-# Guia Completo: Deploy Seguro do Zabbix com Banco de Dados Separado e Proxy Reverso
+# Guia Completo: Zabbix com Banco de Dados Separado e Proxy Reverso
 
 Este documento detalha o passo a passo para implementar uma arquitetura de monitoramento com Zabbix de forma segura, segmentada e de alta performance, utilizando Proxmox.
 
@@ -188,7 +188,44 @@ sudo systemctl enable zabbix-server zabbix-agent nginx php8.1-fpm
 
 ---
 
-## Parte 4: Configuração da Interface Web do Zabbix
+## Parte 4: Configurando o Container LXC do Grafana
+
+Esta seção detalha a instalação do Grafana em seu próprio container isolado.
+
+### 4.1. Criação e Instalação do Container
+1.  Crie o container LXC no Proxmox. **IMPORTANTE:** Marque a opção **`Unprivileged container`**.
+2.  Configure o IP estático `172.16.10.21/24`.
+3.  Acesse o terminal do container e execute os comandos de instalação.
+
+### 4.2. Instalação do Grafana e Plugin do Zabbix
+```bash
+sudo apt update && sudo apt upgrade -y
+
+# Instala pré-requisitos
+sudo apt install -y apt-transport-https software-properties-common wget
+
+# Adiciona a chave de assinatura do Grafana
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - [https://apt.grafana.com/gpg.key](https://apt.grafana.com/gpg.key) | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+
+# Adiciona o repositório do Grafana
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] [https://apt.grafana.com](https://apt.grafana.com) stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+
+# Instala o Grafana
+sudo apt update
+sudo apt install grafana -y
+
+# Instala o plugin do Zabbix
+sudo grafana-cli plugins install alexanderzobnin-zabbix-app
+
+# Inicia e habilita o serviço do Grafana
+sudo systemctl restart grafana-server
+sudo systemctl enable grafana-server
+```
+
+---
+
+## Parte 5: Configuração da Interface Web do Zabbix (Wizard)
 
 1.  Acesse o IP do container Zabbix (`http://172.16.10.20`) ou o domínio configurado no proxy reverso.
 2.  Siga o assistente de configuração.
@@ -218,17 +255,17 @@ sudo systemctl enable zabbix-server zabbix-agent nginx php8.1-fpm
 
 ---
 
-## Parte 5: Configuração do Nginx como Proxy Reverso
+## Parte 6: Configuração do Nginx como Proxy Reverso
 
 Esta abordagem oferece controle total sobre a configuração, gerenciada via linha de comando.
 
-### 5.1. Criação do Container LXC para o Proxy Reverso
+### 6.1. Criação do Container LXC para o Proxy Reverso
 1.  Crie o container LXC (`172.16.10.23`) no Proxmox.
 2.  **Opções:**
     * **Unprivileged container:** **SIM** (essencial para segurança).
     * **Nesting:** **NÃO** (não é necessário, pois não vamos usar Docker).
 
-### 5.2. Instalação do Nginx e Certbot
+### 6.2. Instalação do Nginx e Certbot
 Conecte-se ao terminal do novo container de proxy e execute:
 ```bash
 # Instale Nginx (preferencialmente do repositório oficial) e o Certbot
@@ -236,7 +273,7 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install nginx certbot python3-certbot-nginx -y
 ```
 
-### 5.3. Configuração dos Sites (Virtual Hosts)
+### 6.3. Configuração dos Sites (Virtual Hosts)
 Crie um arquivo de configuração para cada serviço em `/etc/nginx/sites-available/`.
 
 1.  **Arquivo para o Zabbix (`zabbix.seudominio.com.br.conf`):**
@@ -274,9 +311,23 @@ Crie um arquivo de configuração para cada serviço em `/etc/nginx/sites-availa
     sudo nginx -t && sudo systemctl reload nginx
     ```
 
-### 5.4. Habilitando SSL com Certbot
+### 6.4. Habilitando SSL com Certbot
 O plugin do Certbot para Nginx automatiza a configuração do SSL.
 ```bash
 sudo certbot --nginx
 ```
 Siga o assistente, selecionando os domínios que deseja proteger e escolhendo a opção de redirecionar HTTP para HTTPS. A renovação será configurada automaticamente.
+
+---
+
+## Parte 7: Configuração Final no Grafana
+
+1.  Acesse o Grafana pela URL segura: `https://grafana.seudominio.com.br`.
+2.  Faça o login (`admin`/`admin`) e altere a senha padrão.
+3.  Vá em **Connections -> Data sources -> Add new data source** e selecione **Zabbix**.
+4.  **Configure a Conexão:**
+    * **URL:** `http://172.16.10.20/api_jsonrpc.php`
+    * **Username/Password:** Crie um usuário **somente leitura** no Zabbix e use as credenciais dele aqui.
+5.  Clique em **"Save & test"**.
+
+Parabéns! Você tem um ambiente de monitoramento completo, seguro e bem documentado.
